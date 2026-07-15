@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Actas GLPI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Generación de Actas</h1>
+
+        <div class="busqueda">
+
+            <input
+                type="text"
+                id="serial"
+                placeholder="Digite el serial del equipo">
+
+            <button onclick="buscarEquipo()">
+                Buscar
+            </button>
+
+        </div>
+
+        <hr>
+
+        <div class="formulario">
+
+            <label>Fecha</label>
+            <input type="date" id="fecha">
+
+            <label>Entregado a</label>
+            <input id="entregado_a">
+            
+            <label>Cargo de quien recibe</label>
+            <input id="cargo_entrega">
+
+            <label>Entregado por</label>
+            <input id="entregado_por">
+
+            <label>Cargo de quien entrega</label>
+            <input id="cargo_entregado">
+
+            <label>Asunto</label>
+            <input id="asunto">
+            
+            <label>Marca</label>
+            <input id="marca">
+
+            <label>Tipo</label>
+            <input id="tipo">
+
+            <label>Modelo</label>
+            <input id="modelo">
+
+            <label>Serial del equipo</label>
+            <input id="serial">
+
+            <label>Inventario</label>
+            <input id="inventario">
+
+            
+            
+            <button onclick="generarActa()">
+                Generar Acta
+            </button>
+
+
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
