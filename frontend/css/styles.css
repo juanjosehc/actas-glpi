@@ -1,0 +1,148 @@
+body{
+    font-family: Arial;
+    padding:40px;
+}
+
+.container{
+    max-width:800px;
+    margin:auto;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+}
+
+button{
+    padding:10px 20px;
+    cursor:pointer;
+}
+
+
+#acta-layout {
+
+    display: grid;
+
+    grid-template-columns:
+        30%
+        35%
+        35%;
+
+    gap: 20px;
+
+    align-items: start;
+
+}
+
+
+#datos-acta-section,
+#equipos-section,
+#hardware-section {
+
+    border: 1px solid #ccc;
+
+    border-radius: 8px;
+
+    padding: 16px;
+
+    height: 80vh;
+
+    overflow-y: auto;
+
+    overflow-x: hidden;
+
+    box-sizing: border-box;
+
+}
+
+.form-field {
+
+    display: flex;
+
+    flex-direction: column;
+
+    margin-bottom: 12px;
+
+}
+
+.form-field label {
+
+    margin-bottom: 4px;
+
+}
+
+.form-field input {
+
+    padding: 8px;
+
+}
+
+.section-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 16px;
+
+}
+
+#acciones-section {
+
+    margin-top: 20px;
+
+}
+
+input,
+select,
+textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+}
+
+.hardware-item,
+.equipo-item {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+}
+
+#hardware-container,
+#equipos-container {
+
+    width: 100%;
+
+}
+
+.item-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 10px;
+
+}
+
+.equipo-item,
+.hardware-item {
+
+    border: 1px solid #ddd;
+
+    border-radius: 8px;
+
+    padding: 12px;
+
+    margin-bottom: 12px;
+
+}
