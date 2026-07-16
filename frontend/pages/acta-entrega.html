@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acta de Entrega</title>
+    <link rel="stylesheet" href="../css/styles.css">
+
+</head>
+
+<body>
+
+    <main id="acta-entrega-page">
+
+        <h1>Generación de Acta de Entrega</h1>
+
+        
+        <div id="acta-layout" class="three-panel-layout">
+
+
+            <!-- ========================= -->
+            <!-- DATOS DEL ACTA           -->
+            <!-- ========================= -->
+
+            <section id="datos-acta-section">
+
+                <h2>Información del Acta</h2>
+
+                <div class="form-field">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" id="fecha">
+                </div>
+
+                <div class="form-field">
+                    <label for="entregado_a">Entregado a</label>
+                    <input id="entregado_a">
+                </div>
+
+                <div class="form-field">
+                    <label for="cargo_recibe">Cargo de quien recibe</label>
+                    <input id="cargo_recibe">
+                </div>
+
+                <div class="form-field">
+                    <label for="entregado_por">Entregado por</label>
+                    <input id="entregado_por">
+                </div>
+
+                <div class="form-field">
+                    <label for="cargo_entrega">Cargo de quien entrega</label>
+                    <input id="cargo_entrega">
+                </div>
+
+                <div class="form-field">
+                    <label for="asunto">Asunto</label>
+                    <input id="asunto">
+                </div>
+
+            </section>
+
+            <!-- ========================= -->
+            <!-- EQUIPOS                  -->
+            <!-- ========================= -->
+
+            <section id="equipos-section">
+
+                <div class="section-header">
+
+                    <h2>Equipos</h2>
+
+                    <button
+                        type="button"
+                        id="btn-add-equipo">
+
+                        Añadir Equipo
+
+                    </button>
+
+                </div>
+
+                <div id="equipos-container">
+
+                </div>
+
+            </section>
+            <!-- ========================= -->
+            <!-- HARDWARE / SOFTWARE       -->
+            <!-- ========================= -->
+
+            <section id="hardware-section">
+
+                <div class="section-header">
+
+                    <h2>Hardware y Software</h2>
+
+                    <button
+                        type="button"
+                        id="btn-add-hardware">
+
+                        Añadir Hardware
+
+                    </button>
+
+                </div>
+
+                <div id="hardware-container">
+
+                    <!--
+                    Los registros hardware/software
+                    se agregan dinámicamente aquí.
+                    -->
+
+                </div>
+
+            </section>
+
+        </div>
+
+        <!-- ========================= -->
+        <!-- ACCIONES                 -->
+        <!-- ========================= -->
+
+        <section id="acciones-section">
+
+            <button
+                type="button"
+                id="btn-generar-acta"
+                onclick="generarActa()">
+
+                Generar Acta
+
+            </button>
+
+        </section>
+
+    </main>
+
+    <!-- ========================= -->
+    <!-- NOTIFICACIONES            -->
+    <!-- ========================= -->
+
+    <section id="notificaciones">
+
+        <div id="mensaje-app"></div>
+
+    </section>
+
+    <script src="../js/ui.js"></script>
+    <script src="../js/app.js"></script>
+
+</body>
+</html>
