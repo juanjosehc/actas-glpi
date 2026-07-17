@@ -1,6 +1,17 @@
-body{
+:root {
+
+    --color-corporativo: #1E3A8A;
+    --color-corporativo-hover: #1D4ED8;
+
+}
+
+html, body{
+
+    height: 100%;
     font-family: Arial;
-    padding:40px;
+    margin: 0;
+    min-height: 100vh;
+    
 }
 
 .container{
@@ -25,34 +36,24 @@ button{
     display: grid;
 
     grid-template-columns:
-        30%
-        35%
-        35%;
-
+        0.9fr
+        1fr
+        1fr;
     gap: 20px;
 
-    align-items: start;
+}
+
+#checklist-section {
+
+    margin-top: 20px;
 
 }
 
 
-#datos-acta-section,
-#equipos-section,
-#hardware-section {
 
-    border: 1px solid #ccc;
+.card.border {
 
-    border-radius: 8px;
-
-    padding: 16px;
-
-    height: 80vh;
-
-    overflow-y: auto;
-
-    overflow-x: hidden;
-
-    box-sizing: border-box;
+    border-color: #1E3A8A !important;
 
 }
 
@@ -92,7 +93,13 @@ button{
 
 #acciones-section {
 
-    margin-top: 20px;
+    
+    display: flex;
+
+    justify-content: center;
+
+    margin-top: 25px;
+
 
 }
 
@@ -106,19 +113,33 @@ textarea {
 
 }
 
-.hardware-item,
-.equipo-item {
+.equipo-item,
+.hardware-item {
 
     width: 100%;
 
     box-sizing: border-box;
+
+    border: none !important;
+
+    background: transparent !important;
+
+    box-shadow: none !important;
 
 }
 
 #hardware-container,
 #equipos-container {
 
-    width: 100%;
+    
+    flex: 1;
+
+    overflow-y: auto;
+
+    overflow-x: hidden;
+
+    min-height: 0;
+
 
 }
 
@@ -131,6 +152,8 @@ textarea {
     align-items: center;
 
     margin-bottom: 10px;
+    
+    
 
 }
 
@@ -144,5 +167,490 @@ textarea {
     padding: 12px;
 
     margin-bottom: 12px;
+
+}
+
+.input-floating {
+
+    width: 100%;
+
+}
+
+.input {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    
+    border-color: #CBD5E1;
+
+    background: white;
+
+
+}
+
+.input:focus {
+
+    border-color: #1E3A8A !important;
+
+    box-shadow:
+        0 0 0 4px rgba(30, 58, 138, 0.12);
+
+}
+
+.input-floating-label {
+
+    color: #475569;
+
+}
+
+.input:focus + .input-floating-label {
+
+    color: #1E3A8A;
+
+}
+
+
+
+.btn-outline:hover {
+
+    background: #1E3A8A !important;
+
+    color: white !important;
+
+}
+
+
+#acta-entrega-page {
+
+    min-height: 100vh;
+
+    padding: 40px;
+
+    box-sizing: border-box;
+
+    
+
+
+}
+
+
+#acta-entrega-page h1 {
+
+    font-size: 2rem;
+
+    font-weight: 800;
+
+    color: #1E3A8A;
+
+    letter-spacing: -1px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.card-body h3,
+.item-header h4 {
+
+    color: #0F172A;
+
+    font-weight: 600;
+
+}
+
+/* =========================
+   CARDS PRINCIPALES
+   ========================= */
+
+#datos-acta-section,
+#equipos-section,
+#hardware-section {
+
+    
+    display: flex;
+    flex-direction: column;
+
+    height: 75vh;
+
+
+}
+
+#equipos-section .card-body,
+#hardware-section .card-body {
+
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+}
+
+/* =========================
+   CARDS INTERNAS
+   ========================= */
+
+.card.border {
+
+    border-color: var(--color-corporativo) !important;
+
+}
+
+/* Equipo 1, Equipo 2, Hardware 1, etc. */
+
+
+.equipo-item .card,
+.hardware-item .card,
+#datos-acta-section .card {
+
+    border: 2px solid #1E3A8A;
+
+}
+
+
+/* =========================
+   BOTONES
+   ========================= */
+
+.btn-outline {
+
+    border-color: #1E3A8A !important;
+
+    color: #1E3A8A !important;
+
+    background: white !important;
+
+}
+
+.btn-outline:hover {
+
+    background: var(--color-corporativo) !important;
+
+    color: white !important;
+
+}
+
+/* =========================
+   INPUTS
+   ========================= */
+
+.input:focus {
+
+    border-color: var(--color-corporativo) !important;
+
+    box-shadow:
+        0 0 0 3px rgba(30, 58, 138, 0.15);
+
+}
+
+/* =========================
+   TÍTULOS
+   ========================= */
+
+.card-title {
+
+    padding: 12px 8px 16px 8px;
+
+    border-bottom: 1px solid #E2E8F0;
+
+}
+
+
+
+
+/* Datos del Acta, Equipo 1, Hardware 1 */
+
+.card-body h3,
+.item-header h4 {
+
+    color: var(--color-corporativo);
+
+    font-weight: 700;
+
+}
+
+.page-header {
+
+    margin-bottom: 24px;
+
+}
+
+.page-header h1 {
+
+    font-size: 3rem;
+
+    font-weight: 800;
+
+    color: #1E3A8A;
+
+    letter-spacing: -1px;
+
+    margin: 0;
+
+}
+
+.page-header p {
+
+    margin-top: 8px;
+
+    color: #64748B;
+
+    font-size: 1rem;
+
+}
+
+.btn-generar {
+
+    background: #1E3A8A;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 12px;
+
+    padding: 14px 28px;
+
+    font-size: 1rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.2s ease;
+
+}
+
+.btn-generar:hover {
+
+    background: #1D4ED8;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 10px 20px rgba(30,58,138,.2);
+
+}
+
+
+.hero-header {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    text-align: center;
+
+    margin-bottom: 28px;
+
+}
+
+
+.hero-icon {
+
+    width: 72px;
+
+    height: 72px;
+
+    border-radius: 20px;
+
+    background: linear-gradient(
+        135deg,
+        #1E3A8A,
+        #3B82F6
+    );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 2rem;
+
+    color: white;
+
+    box-shadow:
+        0 10px 25px rgba(30,58,138,.2);
+
+}
+
+.hero-header h1 {
+
+    margin: 0;
+
+    font-size: 3rem;
+
+    font-weight: 800;
+
+    letter-spacing: -1px;
+
+    color: #1E3A8A;
+
+}
+
+.hero-header p {
+
+    margin-top: 6px;
+
+    color: #64748B;
+
+    font-size: .95rem;
+
+}
+
+#btn-generar-acta {
+
+    background: linear-gradient(
+        135deg,
+        #1E3A8A,
+        #2563EB
+    );
+
+    color: white;
+
+    border: none;
+
+    border-radius: 16px;
+
+    padding: 16px 32px;
+
+    font-size: 1rem;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 10px 25px rgba(37,99,235,.25);
+
+    transition: all .2s ease;
+
+}
+
+#btn-generar-acta:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 15px 35px rgba(37,99,235,.35);
+
+}
+
+.checklist-grid {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+}
+
+.check-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #E2E8F0;
+
+    border-radius: 10px;
+
+    background: #F8FAFC;
+
+    transition: all .2s ease;
+
+}
+
+.check-item:hover {
+
+    border-color: #1E3A8A;
+
+    background: #EFF6FF;
+
+}
+
+.check-item input[type="checkbox"] {
+
+    width: 18px;
+
+    height: 18px;
+
+    accent-color: #1E3A8A;
+
+}
+
+.check-section {
+
+    margin-top: 12px;
+
+    border: 1px solid #E2E8F0;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+}
+
+.check-section summary {
+
+    cursor: pointer;
+
+    padding: 12px;
+
+    font-weight: 700;
+
+    color: #1E3A8A;
+
+    background: #F8FAFC;
+
+}
+
+.check-section label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px 12px;
+
+}
+
+.check-group-title {
+
+    margin-top: 10px;
+
+    margin-bottom: 8px;
+
+    color: #1E3A8A;
+
+    font-size: 1rem;
+
+}
+
+.radio-group {
+
+    display: flex;
+
+    gap: 15px;
+
+    margin-bottom: 15px;
+
+}
+
+.check-actions {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-bottom: 15px;
 
 }
