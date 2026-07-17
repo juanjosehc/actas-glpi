@@ -26,13 +26,22 @@ async function buscarEquipo() {
 
 async function generarActa() {
 
-    try {   
+    try {
+
         const hardware = [];
+        const checklist = {};
+
+        for (let i = 1; i <= 36; i++) {
+
+            checklist[`chk_${i}`] =
+                document.getElementById(
+                    `chk_${i}`
+                )?.checked ?? false;
+
+        }
 
         document
-            .querySelectorAll(
-                ".hardware-item"
-            )
+            .querySelectorAll(".hardware-item")
             .forEach(item => {
 
                 hardware.push({
@@ -59,9 +68,7 @@ async function generarActa() {
         const equipos = [];
 
         document
-            .querySelectorAll(
-                ".equipo-item"
-            )
+            .querySelectorAll(".equipo-item")
             .forEach(item => {
 
                 equipos.push({
@@ -95,6 +102,21 @@ async function generarActa() {
 
             });
 
+        if (
+            !document.getElementById(
+                "fecha"
+            ).value
+        ) {
+
+            mostrarMensaje(
+                "Debe seleccionar una fecha",
+                "error"
+            );
+
+            return;
+
+        }
+
         const payload = {
 
             fecha:
@@ -119,7 +141,20 @@ async function generarActa() {
                 hardware,
 
             equipos:
-                equipos
+                equipos,
+
+            checklist:
+                checklist,
+
+            numero_sac:
+                document.getElementById(
+                    "numero_sac"
+                ).value,
+
+            sistema_operativo:
+                document.querySelector(
+                    'input[name="so"]:checked'
+                )?.value || ""
 
         };
 
@@ -128,16 +163,18 @@ async function generarActa() {
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
-                body: JSON.stringify(payload)
+                body:
+                    JSON.stringify(payload)
             }
         );
 
         if (!response.ok) {
 
             throw new Error(
-                "No fue posible generar el acta"
+                "No fue posible generar la documentación"
             );
 
         }
@@ -151,15 +188,13 @@ async function generarActa() {
         const a =
             document.createElement("a");
 
-        a.href = url;
-
         const disposition =
             response.headers.get(
                 "Content-Disposition"
             );
 
         let nombreArchivo =
-            "ActaEntrega.docx";
+            "Documentacion.zip";
 
         if (disposition) {
 
@@ -177,29 +212,30 @@ async function generarActa() {
 
         }
 
-        console.log(
-            response.headers.get(
-                "Content-Disposition"
-            )
-        );
-
-        console.log(nombreArchivo);
+        a.href = url;
 
         a.download =
             nombreArchivo;
 
+        document.body.appendChild(a);
+
         a.click();
 
-        a.remove();
+        document.body.removeChild(a);
 
         window.URL.revokeObjectURL(url);
 
-        
         mostrarMensaje(
-            "Acta generada correctamente",
+            "Documentación generada correctamente",
             "success"
         );
-        console.log(payload.hardware);
+
+        
+        console.log(
+            response.headers.get(
+                "content-type"
+            )
+        );
 
 
     }
@@ -208,14 +244,13 @@ async function generarActa() {
 
         console.error(error);
 
-        
         mostrarMensaje(
-            "Error generando el acta",
+            "Error generando la documentación",
             "error"
         );
 
-
     }
+
 }
 
 
@@ -294,36 +329,78 @@ function agregarHardware() {
 
     fila.innerHTML = `
 
-        <div class="item-header">
+        <div class="card border border-base-300 shadow-md">
 
-            <h4>
-                Hardware ${numeroHardware}
-            </h4>
+            <div class="card-body p-2">
 
-            <button
-                type="button"
-                data-eliminar>
+                <div class="item-header">
 
-                Eliminar
+                    <h4>
+                        Hardware ${numeroHardware}
+                    </h4>
 
-            </button>
+                    <button
+                        type="button"
+                        data-eliminar
+                        class="btn btn-outline">
+
+                        Eliminar
+
+                    </button>
+
+                </div>
+
+                <div class="input-floating w-full mb-1">
+
+                <input
+                    type="text"
+                    class="input"
+                    placeholder=" "
+                    data-tipo />
+
+                <label class="input-floating-label">
+
+                    Tipo Hardware
+
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full mb-1">
+
+                <input
+                    type="text"
+                    class="input"
+                    placeholder=" "
+                    data-descripcion />
+
+                <label class="input-floating-label">
+
+                    Descripción
+
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full">
+
+                <input
+                    type="text"
+                    class="input"
+                    placeholder=" "
+                    data-programa />
+
+                <label class="input-floating-label">
+
+                    Programa
+
+                </label>
+
+            </div>
+
+            </div>
 
         </div>
-
-        <input
-            type="text"
-            placeholder="Tipo Hardware"
-            data-tipo>
-
-        <input
-            type="text"
-            placeholder="Descripción"
-            data-descripcion>
-
-        <input
-            type="text"
-            placeholder="Programa"
-            data-programa>
 
     `;
 
@@ -387,53 +464,109 @@ function agregarEquipo() {
 
     equipo.innerHTML = `
 
-        <div class="item-header">
+        <div class="card border border-base-300 shadow-sm">
 
-            <h4>
-                Equipo ${numeroEquipo}
-            </h4>
+            <div class="card-body p-2">
 
-            <button
-                type="button"
-                data-eliminar>
+                <div class="item-header">
 
-                Eliminar
+                    <h4>
+                        Equipo ${numeroEquipo}
+                    </h4>
 
-            </button>
+                    <button
+                        type="button"
+                        data-eliminar
+                        class="btn btn-outline">
+
+                        Eliminar
+
+                    </button>
+
+                </div>
+                <div class="input-floating w-full mb-1">
+
+                    <input
+                        type="text"
+                        class="input"
+                        placeholder=" "
+                        data-serial />
+
+                    <label class="input-floating-label">
+
+                        Serial
+
+                    </label>
+
+                </div>
+
+                <button
+                    type="button"
+                    data-buscar
+                    class="btn btn-outline mb-4">
+
+                    Buscar
+
+                </button>
+
+                <div class="input-floating w-full mb-1">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-marca
+                    readonly />
+
+                <label class="input-floating-label">
+                    Marca
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full mb-1">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-tipo
+                    readonly />
+
+                <label class="input-floating-label">
+                    Tipo
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full mb-1">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-modelo
+                    readonly />
+
+                <label class="input-floating-label">
+                    Modelo
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-inventario />
+
+                <label class="input-floating-label">
+                    Inventario
+                </label>
+
+            </div>
+
+            </div>
 
         </div>
-
-        <input
-            type="text"
-            placeholder="Serial"
-            data-serial>
-
-        <button
-            type="button"
-            data-buscar>
-
-            Buscar
-
-        </button>
-
-        <input
-            placeholder="Marca"
-            data-marca
-            readonly>
-
-        <input
-            placeholder="Tipo"
-            data-tipo
-            readonly>
-
-        <input
-            placeholder="Modelo"
-            data-modelo
-            readonly>
-
-        <input
-            placeholder="Inventario"
-            data-inventario>
 
     `;
 
@@ -545,3 +678,37 @@ function renumerarHardware() {
         });
 
 }
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        const entregadoPor =
+            document.getElementById(
+                "entregado_por"
+            );
+
+        const responsable =
+            document.getElementById(
+                "responsable_verificacion"
+            );
+
+        if (
+            entregadoPor &&
+            responsable
+        ) {
+
+            entregadoPor.addEventListener(
+                "input",
+                () => {
+
+                    responsable.value =
+                        entregadoPor.value;
+
+                }
+            );
+
+        }
+
+    }
+);
