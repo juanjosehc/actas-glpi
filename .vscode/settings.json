@@ -1,0 +1,7 @@
+{
+    "files.watcherExclude": {
+        "**/generados/**": true,
+        "**/app/venv/**": true,
+        "**/__pycache__/**": true
+    }
+}

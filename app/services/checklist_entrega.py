@@ -3,13 +3,15 @@ from docxtpl import DocxTemplate
 import os
 import re
 
+from app.config import GENERADOS_DIR
+
 
 def generar_checklist(datos):
 
     try:
 
         os.makedirs(
-            "generados",
+            GENERADOS_DIR,
             exist_ok=True
         )
 
@@ -147,7 +149,7 @@ def generar_checklist(datos):
             )
 
         ruta_salida = (
-            f"generados/Checklist_{serial_principal}_{asunto}.docx"
+            os.path.join(GENERADOS_DIR, f"Checklist_{serial_principal}_{asunto}.docx")
         )
 
         doc.save(

@@ -8,7 +8,10 @@ from zipfile import ZipFile
 import os
 import copy
 
+from app.config import GENERADOS_DIR
+
 router = APIRouter()
+
 
 
 @router.post("/generar-acta")
@@ -48,17 +51,27 @@ def generar(data: dict):
     # =========================
 
     if not resultado["success"]:
-        return resultado
 
-    
+        return {
+            "success": False,
+            "mensaje": resultado.get(
+                "mensaje",
+                "Error generando acta"
+            )
+        }
+
     if not resultado_checklist["success"]:
 
         print("ERROR CHECKLIST:")
         print(resultado_checklist)
 
-        raise Exception(
-            resultado_checklist["mensaje"]
-        )
+        return {
+            "success": False,
+            "mensaje": resultado_checklist.get(
+                "mensaje",
+                "Error generando checklist"
+            )
+        }
 
 
     # =========================
@@ -84,8 +97,9 @@ def generar(data: dict):
         f"ActaLista_{serial}_{asunto}.zip"
     )
 
-    ruta_zip = (
-        f"generados/{nombre_zip}"
+    ruta_zip = os.path.join(
+        GENERADOS_DIR,
+        nombre_zip
     )
 
     # =========================
@@ -121,16 +135,40 @@ def generar(data: dict):
     print("ZIP CREADO")
 
     # =========================
-    # RETORNAR ZIP
+    # RETORNAR JSON CON NOMBRE
     # =========================
-    print("ENTRANDO A FILERESPONSE")
-    
+
+    return {
+        "success": True,
+        "nombre_zip": nombre_zip,
+        "mensaje": "Documentacion generada correctamente"
+    }
+
+
+@router.get("/descargar-acta/{nombre_zip}")
+def descargar(nombre_zip: str):
+
+    ruta_zip = os.path.join(
+        GENERADOS_DIR,
+        nombre_zip
+    )
+
+    print("DESCARGAR:", ruta_zip)
+
+    print(
+        "EXISTE:",
+        os.path.exists(ruta_zip)
+    )
+
+    if not os.path.exists(ruta_zip):
+
+        return {
+            "success": False,
+            "mensaje": "Archivo no encontrado"
+        }
+
     return FileResponse(
         path=ruta_zip,
         filename=nombre_zip,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition":
-                f'attachment; filename="{nombre_zip}"'
-        }
+        media_type="application/zip"
     )

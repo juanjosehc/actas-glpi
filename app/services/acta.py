@@ -4,12 +4,14 @@ from docxtpl import DocxTemplate
 import re
 import os
 
+from app.config import GENERADOS_DIR
+
 def generar_acta(datos):
 
     try:
 
         os.makedirs(
-            "generados",
+            GENERADOS_DIR,
             exist_ok=True
         )
 
@@ -111,7 +113,7 @@ def generar_acta(datos):
             )
 
         ruta_salida = (
-            f"generados/ActaEntrega_{serial_principal}_{asunto}.docx"
+            os.path.join(GENERADOS_DIR, f"ActaEntrega_{serial_principal}_{asunto}.docx")
         )
 
         print("Guardando:", ruta_salida)

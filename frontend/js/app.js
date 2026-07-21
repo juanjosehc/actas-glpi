@@ -25,7 +25,8 @@ async function buscarEquipo() {
 }
 
 async function generarActa() {
-
+    console.log("ENTRO A GENERAR ACTA");
+    
     try {
 
         const hardware = [];
@@ -156,96 +157,101 @@ async function generarActa() {
                     'input[name="so"]:checked'
                 )?.value || ""
 
-        };
+        };        
+
+        console.log("ANTES DEL FETCH");
 
         const response = await fetch(
             "http://127.0.0.1:8001/generar-acta",
             {
                 method: "POST",
                 headers: {
-                    "Content-Type":
-                        "application/json"
+                    "Content-Type": "application/json"
                 },
-                body:
-                    JSON.stringify(payload)
+                body: JSON.stringify(payload)
             }
         );
 
+        console.log("DESPUES DEL FETCH");
+
         if (!response.ok) {
 
+            const errorData =
+                await response.json();
+
             throw new Error(
+                errorData.mensaje ||
                 "No fue posible generar la documentación"
             );
 
         }
 
-        const blob =
-            await response.blob();
+        const result =
+            await response.json();
 
-        const url =
-            window.URL.createObjectURL(blob);
+        console.log("RESULTADO:", result);
 
-        const a =
-            document.createElement("a");
+        if (!result.success) {
 
-        const disposition =
-            response.headers.get(
-                "Content-Disposition"
+            throw new Error(
+                result.mensaje ||
+                "Error generando la documentación"
             );
 
-        let nombreArchivo =
-            "Documentacion.zip";
-
-        if (disposition) {
-
-            const match =
-                disposition.match(
-                    /filename="?([^"]+)"?/
-                );
-
-            if (match) {
-
-                nombreArchivo =
-                    match[1];
-
-            }
-
         }
-
-        a.href = url;
-
-        a.download =
-            nombreArchivo;
-
-        document.body.appendChild(a);
-
-        a.click();
-
-        document.body.removeChild(a);
-
-        window.URL.revokeObjectURL(url);
 
         mostrarMensaje(
             "Documentación generada correctamente",
             "success"
         );
 
-        
-        console.log(
-            response.headers.get(
-                "content-type"
-            )
+        console.log("INICIANDO DESCARGA:", result.nombre_zip);
+
+        const descargaResponse = await fetch(
+            "http://127.0.0.1:8001/descargar-acta/" +
+            result.nombre_zip
         );
+
+        console.log("RESPUESTA DESCARGA:", descargaResponse.status);
+
+        if (!descargaResponse.ok) {
+            throw new Error("Error descargando el archivo");
+        }
+
+        const blob =
+            await descargaResponse.blob();
+
+        const blobUrl =
+            URL.createObjectURL(blob);
+
+        const linkDescarga =
+            document.createElement("a");
+
+        linkDescarga.href = blobUrl;
+
+        linkDescarga.download =
+            result.nombre_zip;
+
+        document.body.appendChild(
+            linkDescarga
+        );
+
+        linkDescarga.click();
+
+        linkDescarga.remove();
+
+        URL.revokeObjectURL(blobUrl);
 
 
     }
 
     catch (error) {
 
-        console.error(error);
+        console.error("ERROR COMPLETO:", error);
+        console.error("MENSAJE:", error.message);
 
         mostrarMensaje(
-            "Error generando la documentación",
+            "Error generando la documentación: " + error.message,
             "error"
         );
 
