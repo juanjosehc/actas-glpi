@@ -83,33 +83,32 @@ def generar_checklist(datos):
 
             equipo = datos["equipos"][0]
 
-            datos["marca"] = (
+            datos["eq_1_marca"] = (
                 equipo["marca"]
             )
 
-            datos["tipo"] = (
+            datos["eq_1_tipo"] = (
                 equipo["tipo"]
             )
 
-            datos["modelo"] = (
+            datos["eq_1_modelo"] = (
                 equipo["modelo"]
             )
 
-            datos["serial"] = (
+            datos["eq_1_serial"] = (
                 equipo["serial"]
             )
 
-            datos["inventario"] = (
+            datos["eq_1_inventario"] = (
                 equipo["inventario"]
             )
-
         else:
 
-            datos["marca"] = ""
-            datos["tipo"] = ""
-            datos["modelo"] = ""
-            datos["serial"] = ""
-            datos["inventario"] = ""
+            datos["eq_1_marca"] = ""
+            datos["eq_1_tipo"] = ""
+            datos["eq_1_modelo"] = ""
+            datos["eq_1_serial"] = ""
+            datos["eq_1_inventario"] = ""
         
         print(os.path.abspath("plantillas"))
         print(os.listdir("plantillas"))
