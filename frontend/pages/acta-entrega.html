@@ -334,44 +334,64 @@
                                     Sistema Operativo
                                 </h3>
 
-                                <div class="radio-group">
+                                <div class="flex flex-col gap-2 mb-4">
 
-                                    <label>
-                                        <input type="radio" name="so" value="Windows 10">
-                                        Windows 10
-                                    </label>
+                                    <div class="flex items-center gap-1">
 
-                                    <label>
-                                        <input type="radio" name="so" value="Windows 11">
-                                        Windows 11
-                                    </label>
+                                        <input
+                                            type="radio"
+                                            name="so"
+                                            class="radio radio-inset radio-primary"
+                                            id="so-win10"
+                                            value="Windows 10" />
 
-                                    <label>
-                                        <input type="radio" name="so" value="Mac OS">
-                                        Mac OS
-                                    </label>
+                                        <label
+                                            class="label-text text-base"
+                                            for="so-win10">
 
-                                </div>
+                                            Windows 10
 
-                                <div class="check-actions">
+                                        </label>
 
-                                    <button
-                                        type="button"
-                                        id="btn-marcar-todo"
-                                        class="btn btn-outline">
+                                    </div>
 
-                                        Marcar Todo
+                                    <div class="flex items-center gap-1">
 
-                                    </button>
+                                        <input
+                                            type="radio"
+                                            name="so"
+                                            class="radio radio-inset radio-primary"
+                                            id="so-win11"
+                                            value="Windows 11" />
 
-                                    <button
-                                        type="button"
-                                        id="btn-desmarcar-todo"
-                                        class="btn btn-outline">
+                                        <label
+                                            class="label-text text-base"
+                                            for="so-win11">
 
-                                        Limpiar
+                                            Windows 11
 
-                                    </button>
+                                        </label>
+
+                                    </div>
+
+                                    <div class="flex items-center gap-1">
+
+                                        <input
+                                            type="radio"
+                                            name="so"
+                                            class="radio radio-inset radio-primary"
+                                            id="so-macos"
+                                            value="Mac OS" />
+
+                                        <label
+                                            class="label-text text-base"
+                                            for="so-macos">
+
+                                            Mac OS
+
+                                        </label>
+
+                                    </div>
 
                                 </div>
 
