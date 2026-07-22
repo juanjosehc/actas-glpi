@@ -168,6 +168,7 @@ public class DocumentoWordService {
             datos.put("eq_" + i + "_modelo", "");
             datos.put("eq_" + i + "_serial", "");
             datos.put("eq_" + i + "_inventario", "");
+            datos.put("eq_" + i + "_estado", "");
         }
 
         List<Map<String, Object>> eqList = asMapList(datos.get("equipos"));
@@ -180,6 +181,7 @@ public class DocumentoWordService {
             datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
             datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
             datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
+            datos.put("eq_" + idx + "_estado", eq.getOrDefault("estado", ""));
         }
 
         for (int i = 1; i <= 10; i++) {

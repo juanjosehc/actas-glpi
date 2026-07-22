@@ -16,7 +16,7 @@ public class DevolucionRequest {
 
     private String entregado_por = "";
 
-    private String cargo_recibe = "";  
+    private String cargo_recibe = "";
 
     private String cedula = "";
 
@@ -24,15 +24,11 @@ public class DevolucionRequest {
 
     private String motivo = "";
 
-    private String nombre_entrega = "";
-
     private String cargo_entrega = "";
 
     private String nombre_jefe = "";
 
     private String cargo_jefe = "";
-
-    private String nombre_recepcion = "";
 
     private List<EquipoItem> equipos = new ArrayList<>();
 

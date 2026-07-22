@@ -86,6 +86,11 @@ async function generarDevolucion() {
                     inventario:
                         item.querySelector(
                             "[data-inventario]"
+                        ).value,
+
+                    estado:
+                        item.querySelector(
+                            "[data-estado]"
                         ).value
 
                 });
@@ -124,7 +129,7 @@ async function generarDevolucion() {
             cargo_entrega:
                 document.getElementById("cargo_entrega")?.value || "",
 
-            cedula_entrega:
+            cedula:
                 document.getElementById("cedula")?.value || "",
 
             area_recibe:
@@ -514,7 +519,7 @@ function agregarEquipo() {
 
             </div>
 
-            <div class="input-floating w-full">
+            <div class="input-floating w-full mb-1">
 
                 <input
                     class="input"
@@ -523,6 +528,19 @@ function agregarEquipo() {
 
                 <label class="input-floating-label">
                     Inventario
+                </label>
+
+            </div>
+
+            <div class="input-floating w-full">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-estado />
+
+                <label class="input-floating-label">
+                    Estado
                 </label>
 
             </div>

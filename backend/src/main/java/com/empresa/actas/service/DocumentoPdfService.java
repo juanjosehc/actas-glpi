@@ -111,8 +111,8 @@ public class DocumentoPdfService {
         y = drawTextLeft(cs, "Fecha: " + fecha, font, y, 11);
         y -= 5;
 
-        String nombreEntrega = datos.getOrDefault("nombre_entrega", "").toString();
-        y = drawTextLeft(cs, "Entregado por: " + nombreEntrega, font, y, 11);
+        String entregadoPor = datos.getOrDefault("entregado_por", "").toString();
+        y = drawTextLeft(cs, "Entregado por: " + entregadoPor, font, y, 11);
         y -= 5;
 
         String cargoEntrega = datos.getOrDefault("cargo_entrega", "").toString();
@@ -123,8 +123,8 @@ public class DocumentoPdfService {
         y = drawTextLeft(cs, "Cedula: " + cedula, font, y, 11);
         y -= 5;
 
-        String nombreRecepcion = datos.getOrDefault("nombre_recepcion", "").toString();
-        y = drawTextLeft(cs, "Recibido por: " + nombreRecepcion, font, y, 11);
+        String recibidoPor = datos.getOrDefault("recibido_por", "").toString();
+        y = drawTextLeft(cs, "Recibido por: " + recibidoPor, font, y, 11);
         y -= 5;
 
         String cargoRecibe = datos.getOrDefault("cargo_recibe", "").toString();
@@ -142,7 +142,7 @@ public class DocumentoPdfService {
         y = drawTextCentered(cs, "EQUIPOS DEVUELTOS", fontBold, y, 12);
         y -= 10;
 
-        y = drawEquipoTable(cs, datos, font, fontBold, y);
+        y = drawDevolucionEquipoTable(cs, datos, font, fontBold, y);
         y -= 15;
 
         List<Map<String, Object>> hwList = asMapList(datos.get("hardware"));
@@ -166,7 +166,7 @@ public class DocumentoPdfService {
         y -= 8;
         y = drawTextLeft(cs, "Firma", font, y, 8);
         y -= 3;
-        y = drawTextLeft(cs, "Entregado por: " + nombreEntrega, font, y, 9);
+        y = drawTextLeft(cs, "Entregado por: " + entregadoPor, font, y, 9);
         y -= 4;
         y = drawTextLeft(cs, "Cargo: " + cargoEntrega, font, y, 9);
         y -= 15;
@@ -175,7 +175,7 @@ public class DocumentoPdfService {
         y -= 8;
         y = drawTextLeft(cs, "Firma", font, y, 8);
         y -= 3;
-        y = drawTextLeft(cs, "Recibido por: " + nombreRecepcion, font, y, 9);
+        y = drawTextLeft(cs, "Recibido por: " + recibidoPor, font, y, 9);
         y -= 4;
         y = drawTextLeft(cs, "Cargo: " + cargoRecibe, font, y, 9);
         y -= 15;
@@ -191,6 +191,35 @@ public class DocumentoPdfService {
             y -= 4;
             y = drawTextLeft(cs, "Cargo: " + cargoJefe, font, y, 9);
         }
+    }
+
+    private float drawDevolucionEquipoTable(
+            PDPageContentStream cs,
+            Map<String, Object> datos,
+            PDFont font,
+            PDFont fontBold,
+            float y
+    ) throws IOException {
+
+        String[] headers = {"Marca", "Tipo", "Modelo", "Serial", "Nro. Inventario", "Estado"};
+        float[] widths = {0.15f, 0.15f, 0.20f, 0.18f, 0.17f, 0.15f};
+
+        y = drawTableRow(cs, headers, widths, fontBold, y, true);
+
+        List<Map<String, Object>> eqList = asMapList(datos.get("equipos"));
+        for (Map<String, Object> eq : eqList) {
+            String[] row = {
+                    String.valueOf(eq.getOrDefault("marca", "")),
+                    String.valueOf(eq.getOrDefault("tipo", "")),
+                    String.valueOf(eq.getOrDefault("modelo", "")),
+                    String.valueOf(eq.getOrDefault("serial", "")),
+                    String.valueOf(eq.getOrDefault("inventario", "")),
+                    String.valueOf(eq.getOrDefault("estado", ""))
+            };
+            y = drawTableRow(cs, row, widths, font, y, false);
+        }
+
+        return y;
     }
 
     private float drawOtroElementoTable(
