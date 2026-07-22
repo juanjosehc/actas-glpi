@@ -19,6 +19,74 @@ html, body{
     margin:auto;
 }
 
+/* =========================
+   NAVBAR
+   ========================= */
+
+.navbar-corporativo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: #1E3A8A;
+    color: white;
+
+    padding: 12px 24px;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,.12);
+
+    margin-bottom: 24px;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo-container {
+    width: 140px;
+    height: 50px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 2px dashed rgba(255,255,255,.4);
+    border-radius: 10px;
+}
+
+.navbar-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.navbar-right {
+    display: flex;
+    gap: 12px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+
+    padding: 10px 18px;
+    border-radius: 10px;
+
+    transition: all .2s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,.15);
+}
+
+.nav-link.active {
+    background: white;
+    color: #1E3A8A;
+    font-weight: 700;
+}
+
 input:not([type="radio"]):not([type="checkbox"]) {
     width: 100%;
     padding: 10px;
@@ -664,4 +732,19 @@ textarea {
 
 .textarea:focus + .textarea-floating-label {
     color: #1E3A8A !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+    background: #1E3A8A !important;
+    border-color: #1E3A8A !important;
+}
+
+.flatpickr-day.today {
+    border-color: #1E3A8A !important;
+}
+
+.flatpickr-months .flatpickr-month {
+    color: #1E3A8A;
 }

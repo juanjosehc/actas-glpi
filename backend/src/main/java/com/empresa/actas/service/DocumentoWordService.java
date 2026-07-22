@@ -155,6 +155,66 @@ public class DocumentoWordService {
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
 
+    public Path generarDevolucion(Map<String, Object> datos) throws IOException {
+
+        Path outputDir = Paths.get(generatedDir);
+        Files.createDirectories(outputDir);
+
+        prepararFecha(datos);
+
+        for (int i = 1; i <= 10; i++) {
+            datos.put("eq_" + i + "_marca", "");
+            datos.put("eq_" + i + "_tipo", "");
+            datos.put("eq_" + i + "_modelo", "");
+            datos.put("eq_" + i + "_serial", "");
+            datos.put("eq_" + i + "_inventario", "");
+        }
+
+        List<Map<String, Object>> eqList = asMapList(datos.get("equipos"));
+        int idx = 0;
+        for (Map<String, Object> eq : eqList) {
+            idx++;
+            if (idx > 10) break;
+            datos.put("eq_" + idx + "_marca", eq.getOrDefault("marca", ""));
+            datos.put("eq_" + idx + "_tipo", eq.getOrDefault("tipo", ""));
+            datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
+            datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
+        }
+
+        for (int i = 1; i <= 10; i++) {
+            datos.put("ot_" + i + "_tipo", "");
+        }
+
+        List<Map<String, Object>> hwList = asMapList(datos.get("hardware"));
+        idx = 0;
+        for (Map<String, Object> hw : hwList) {
+            idx++;
+            if (idx > 10) break;
+            datos.put("ot_" + idx + "_tipo", hw.getOrDefault("tipo", ""));
+        }
+
+        Map<String, String> vars = new HashMap<>();
+        for (Map.Entry<String, Object> entry : datos.entrySet()) {
+            vars.put(entry.getKey(), String.valueOf(entry.getValue()));
+        }
+
+        Path templatePath = resolveTemplate("ActaDevolucion.docx");
+
+        String serial = "SinSerial";
+        if (!eqList.isEmpty()) {
+            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+        }
+
+        String motivo = datos.getOrDefault("motivo", "").toString()
+                .replaceAll("[^a-zA-Z0-9]", "");
+
+        String fileName = "Devolucion_" + serial + "_" + motivo + ".docx";
+        Path outputPath = outputDir.resolve(fileName);
+
+        return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
+    }
+
     private Path resolveTemplate(String templateName) throws IOException {
         if (templatesDir.startsWith("classpath:")) {
             String classpath = templatesDir.substring("classpath:".length());

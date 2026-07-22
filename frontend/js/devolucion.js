@@ -24,7 +24,7 @@ async function buscarEquipo() {
             document.getElementById("serial").value;
 }
 
-async function generarActa() {
+async function generarDevolucion() {
     console.log("ENTRO A GENERAR ACTA");
     
     try {
@@ -51,17 +51,6 @@ async function generarActa() {
                         item.querySelector(
                             "[data-tipo]"
                         ).value,
-
-                    descripcion:
-                        item.querySelector(
-                            "[data-descripcion]"
-                        ).value,
-
-                    programa:
-                        item.querySelector(
-                            "[data-programa]"
-                        ).value
-
                 });
 
             });
@@ -134,40 +123,33 @@ async function generarActa() {
 
             cargo_entrega:
                 document.getElementById("cargo_entrega").value,
+            
+            cedula:
+                document.getElementById("cedula").value,
 
-            asunto:
-                document.getElementById("asunto").value,
+            area:
+                document.getElementById("area_recibe").value,
+
+            motivo:
+                document.getElementById("motivo").value,
 
             hardware:
                 hardware,
 
             equipos:
                 equipos,
-
-            checklist:
-                checklist,
-
-            numero_sac:
-                document.getElementById(
-                    "numero_sac"
-                ).value,
             
             observaciones:
                 document.getElementById(
                     "observaciones"
                 )?.value || "",
 
-            sistema_operativo:
-                document.querySelector(
-                    'input[name="so"]:checked'
-                )?.value || ""
-
         };        
 
         console.log("ANTES DEL FETCH");
 
         const response = await fetch(
-            "http://127.0.0.1:8001/generar-acta",
+            "http://127.0.0.1:8001/generar-devolucion",
             {
                 method: "POST",
                 headers: {
@@ -374,40 +356,6 @@ function agregarHardware() {
                     Tipo Hardware
 
                 </label>
-
-            </div>
-
-            <div class="input-floating w-full mb-1">
-
-                <input
-                    type="text"
-                    class="input"
-                    placeholder=" "
-                    data-descripcion />
-
-                <label class="input-floating-label">
-
-                    Descripción
-
-                </label>
-
-            </div>
-
-            <div class="input-floating w-full">
-
-                <input
-                    type="text"
-                    class="input"
-                    placeholder=" "
-                    data-programa />
-
-                <label class="input-floating-label">
-
-                    Programa
-
-                </label>
-
-            </div>
 
             </div>
 
