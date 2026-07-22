@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,34 +60,90 @@ public class DocxTemplateEngine {
             XWPFParagraph paragraph,
             Map<String, String> variables
     ) {
-        String fullText = getFullParagraphText(paragraph);
+        List<XWPFRun> runs = paragraph.getRuns();
+        if (runs == null || runs.isEmpty()) {
+            return;
+        }
 
-        Matcher matcher = VARIABLE_PATTERN.matcher(fullText);
+        int n = runs.size();
+        int[] boundary = new int[n + 1];
+        StringBuilder concat = new StringBuilder();
+        for (int r = 0; r < n; r++) {
+            boundary[r] = concat.length();
+            String t = runs.get(r).text();
+            concat.append(t != null ? t : "");
+        }
+        boundary[n] = concat.length();
+
+        String full = concat.toString();
+        if (!full.contains("{{")) {
+            return;
+        }
+
+        Matcher matcher = VARIABLE_PATTERN.matcher(full);
         if (!matcher.find()) {
             return;
         }
 
         matcher.reset();
-        String replaced = fullText;
+        List<int[]> matchRanges = new ArrayList<>();
+        List<String> matchValues = new ArrayList<>();
         while (matcher.find()) {
-            String varName = matcher.group(1);
-            String value = variables.getOrDefault(varName, "");
-            replaced = replaced.replace(matcher.group(), value);
+            matchRanges.add(new int[]{matcher.start(), matcher.end()});
+            matchValues.add(variables.getOrDefault(matcher.group(1), ""));
         }
 
-        while (paragraph.getRuns().size() > 0) {
-            paragraph.removeRun(0);
-        }
+        for (int r = 0; r < n; r++) {
+            int runStart = boundary[r];
+            int runEnd = boundary[r + 1];
 
-        XWPFRun newRun = paragraph.createRun();
-        newRun.setText(replaced);
+            boolean touches = false;
+            for (int[] range : matchRanges) {
+                if (range[0] < runEnd && range[1] > runStart) {
+                    touches = true;
+                    break;
+                }
+            }
+            if (!touches) {
+                continue;
+            }
+
+            StringBuilder newRunText = new StringBuilder();
+            int pos = runStart;
+
+            while (pos < runEnd) {
+                int[] hitRange = null;
+                int hitIdx = -1;
+                for (int m = 0; m < matchRanges.size(); m++) {
+                    int[] range = matchRanges.get(m);
+                    if (pos >= range[0] && pos < range[1]) {
+                        hitRange = range;
+                        hitIdx = m;
+                        break;
+                    }
+                }
+
+                if (hitRange == null) {
+                    newRunText.append(full.charAt(pos));
+                    pos++;
+                } else {
+                    if (r == findRun(boundary, n, hitRange[0])) {
+                        newRunText.append(matchValues.get(hitIdx));
+                    }
+                    pos = hitRange[1];
+                }
+            }
+
+            runs.get(r).setText(newRunText.toString(), 0);
+        }
     }
 
-    private static String getFullParagraphText(XWPFParagraph paragraph) {
-        StringBuilder sb = new StringBuilder();
-        for (XWPFRun run : paragraph.getRuns()) {
-            sb.append(run.text());
+    private static int findRun(int[] boundary, int n, int position) {
+        for (int r = 0; r < n; r++) {
+            if (position >= boundary[r] && position < boundary[r + 1]) {
+                return r;
+            }
         }
-        return sb.toString();
+        return n - 1;
     }
 }
