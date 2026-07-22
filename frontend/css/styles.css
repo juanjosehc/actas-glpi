@@ -338,7 +338,10 @@ textarea {
     display: flex;
     flex-direction: column;
 
-    height: 75vh;
+    
+    height: auto;
+    min-height: 75vh;
+
 
 
 }
@@ -747,4 +750,14 @@ textarea {
 
 .flatpickr-months .flatpickr-month {
     color: #1E3A8A;
+}
+
+#datos-acta-section .card-body {
+    height: 100%;
+    min-height: 0;
+}
+
+#datos-acta-section .card.border {
+    height: calc(75vh - 100px);
+    overflow-y: auto;
 }

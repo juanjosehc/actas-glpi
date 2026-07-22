@@ -183,7 +183,7 @@
 
                                     <input
                                         type="text"
-                                        id="recibido_por"
+                                        id="cargo_recibe"
                                         class="input"
                                         placeholder=" " />
 
@@ -267,6 +267,20 @@
 
                                     </label>
 
+                                </div>
+                                <div class="textarea-floating w-full mt-4">
+                                    <textarea
+                                        id="observaciones"
+                                        class="textarea"
+                                        placeholder=" "
+                                    ></textarea>
+
+                                    <label
+                                        class="textarea-floating-label border-blue-500 focus:border-blue-500 focus:outline-none"
+                                        for="observaciones"
+                                    >
+                                        Observaciones
+                                    </label>
                                 </div>
 
                             </div>
@@ -360,6 +374,7 @@
                     </div>
 
                 </section>
+                
 
             </div>
 
@@ -374,7 +389,7 @@
             <button
                 type="button"
                 id="btn-generar-acta"
-                onclick="generarActa()">
+                onclick="generarDevolucion()">
 
                 Generar Acta + Lista de Chequeo
 
