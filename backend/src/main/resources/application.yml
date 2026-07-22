@@ -1,0 +1,17 @@
+server:
+  port: 8001
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+glpi:
+  url: ${GLPI_URL:http://10.86.1.33/glpi/apirest.php}
+  app-token: ${GLPI_APP_TOKEN:ZRsogtQqJgimxPwWxROo0F2WJdvLrsH0XLtcBKu8}
+  user-token: ${GLPI_USER_TOKEN:sX4sG98XFSnNyVaLwDckHwpdxNgO6rxrOUsN1vht}
+
+app:
+  generated-dir: ${java.io.tmpdir}/actas_glpi_generados
+  templates-dir: classpath:plantillas

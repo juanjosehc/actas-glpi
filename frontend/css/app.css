@@ -5,3 +5,10 @@
 @import "../node_modules/flyonui/variants.css";
 
 @source "../node_modules/flyonui/dist/index.js";
+
+@source inline("radio");
+@source inline("radio-inset");
+@source inline("radio-primary");
+
+@source inline("textarea-floating");
+@source inline("textarea-floating-label");
