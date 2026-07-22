@@ -110,41 +110,45 @@ async function generarDevolucion() {
         const payload = {
 
             fecha:
-                document.getElementById("fecha").value,
+                document.getElementById("fecha")?.value || "",
 
-            entregado_a:
-                document.getElementById("entregado_a").value,
-
-            cargo_recibe:
-                document.getElementById("cargo_recibe").value,
+            recibido_por:
+                document.getElementById("recibido_por")?.value || "",
 
             entregado_por:
-                document.getElementById("entregado_por").value,
+                document.getElementById("entregado_por")?.value || "",
+
+            cargo_recibe:
+                document.getElementById("cargo_recibe")?.value || "",
 
             cargo_entrega:
-                document.getElementById("cargo_entrega").value,
-            
-            cedula:
-                document.getElementById("cedula").value,
+                document.getElementById("cargo_entrega")?.value || "",
 
-            area:
-                document.getElementById("area_recibe").value,
+            cedula_entrega:
+                document.getElementById("cedula")?.value || "",
+
+            area_recibe:
+                document.getElementById("area_recibe")?.value || "",
 
             motivo:
-                document.getElementById("motivo").value,
+                document.getElementById("motivo")?.value || "",
+
+            nombre_jefe:
+                document.getElementById("nombre_jefe")?.value || "",
+
+            cargo_jefe:
+                document.getElementById("cargo_jefe")?.value || "",
 
             hardware:
                 hardware,
 
             equipos:
                 equipos,
-            
-            observaciones:
-                document.getElementById(
-                    "observaciones"
-                )?.value || "",
 
-        };        
+            observaciones:
+                document.getElementById("observaciones")?.value || ""
+
+        };
 
         console.log("ANTES DEL FETCH");
 
