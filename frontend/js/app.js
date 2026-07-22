@@ -151,6 +151,11 @@ async function generarActa() {
                 document.getElementById(
                     "numero_sac"
                 ).value,
+            
+            observaciones:
+                document.getElementById(
+                    "observaciones"
+                )?.value || "",
 
             sistema_operativo:
                 document.querySelector(
