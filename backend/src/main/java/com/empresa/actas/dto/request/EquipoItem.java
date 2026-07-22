@@ -10,4 +10,5 @@ public class EquipoItem {
     private String tipo = "";
     private String modelo = "";
     private String inventario = "";
+    private String estado = "";
 }
