@@ -7,9 +7,40 @@
 
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/output.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 
 <body>
+    <nav class="navbar navbar-corporativo">
+        <div class="navbar-left">
+
+            <div class="logo-container">
+                <!-- Logo aquí -->
+                <!-- ../img/logo.png -->
+            </div>
+
+            <div class="navbar-title">
+                Gestión de Actas
+            </div>
+
+        </div>
+
+        <div class="navbar-right">
+
+            <a
+                href="acta-entrega.html"
+                class="nav-link active">
+                Acta de Entrega
+            </a>
+
+            <a
+                href="acta-devolucion.html"
+                class="nav-link">
+                Acta de Devolución
+            </a>
+
+        </div>
+    </nav>
     
 
     <main id="acta-entrega-page">
@@ -66,21 +97,17 @@
                                 </h3>
 
                                 <div class="input-floating w-full mb-1">
-
                                     <input
-                                        type="date"
+                                        type="text"
                                         id="fecha"
                                         class="input"
-                                        placeholder=" " />
+                                        placeholder="DD-MM-YYYY" />
 
                                     <label
                                         class="input-floating-label"
                                         for="fecha">
-
                                         Fecha
-
                                     </label>
-
                                 </div>
 
                                 <div class="input-floating w-full mb-1">
@@ -690,7 +717,8 @@
     <section id="notificaciones">
         <div id="mensaje-app"></div>
     </section>
-
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="../js/ui.js"></script>
     <script src="../js/app.js"></script>
     <script src="../node_modules/flyonui/flyonui.js"></script>
