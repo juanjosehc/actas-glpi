@@ -368,6 +368,24 @@ document.addEventListener(
 
         agregarHardware();
 
+        document
+            .getElementById(
+                "btn-marcar-todo"
+            )
+            ?.addEventListener(
+                "click",
+                marcarTodosLosChecks
+            );
+
+        document
+            .getElementById(
+                "btn-desmarcar-todo"
+            )
+            ?.addEventListener(
+                "click",
+                desmarcarTodosLosChecks
+            );
+
     }
 );
 
@@ -936,3 +954,47 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
 });
+
+function abrirTodosLosAccordions() {
+
+    document
+        .querySelectorAll(".check-section")
+        .forEach(section => {
+
+            section.open = true;
+
+        });
+
+}
+
+function marcarTodosLosChecks() {
+
+    document
+        .querySelectorAll(
+            'input[type="checkbox"][id^="chk_"]'
+        )
+        .forEach(check => {
+
+            check.checked = true;
+
+        });
+
+    abrirTodosLosAccordions();
+
+}
+
+function desmarcarTodosLosChecks() {
+
+    document
+        .querySelectorAll(
+            'input[type="checkbox"][id^="chk_"]'
+        )
+        .forEach(check => {
+
+            check.checked = false;
+
+        });
+
+    cerrarTodosLosAccordions();
+
+}
