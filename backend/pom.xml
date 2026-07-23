@@ -23,7 +23,6 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <poi.version>5.2.5</poi.version>
-        <pdfbox.version>3.0.1</pdfbox.version>
         <dotenv.version>3.2.0</dotenv.version>
     </properties>
 
@@ -60,12 +59,6 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
-            <version>${pdfbox.version}</version>
         </dependency>
 
         <dependency>

@@ -779,3 +779,28 @@ textarea {
 .input-floating-label {
     color: #ef4444 !important;
 }
+
+#so-container.is-invalid {
+    border: 2px solid #ef4444;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+#so-container {
+    transition: all 0.2s ease;
+}
+
+.so-radios {
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.so-radios.is-invalid {
+    border: 2px solid #ef4444;
+}
+
+.radio-so-error {
+    outline: 2px solid #ef4444 !important;
+    outline-offset: 2px;
+    border-radius: 999px;
+}

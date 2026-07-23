@@ -19,18 +19,15 @@ public class DevolucionService {
     private String generatedDir;
 
     private final DocumentoWordService wordService;
-    private final DocumentoPdfService pdfService;
     private final ZipService zipService;
     private final ObjectMapper objectMapper;
 
     public DevolucionService(
             DocumentoWordService wordService,
-            DocumentoPdfService pdfService,
             ZipService zipService,
             ObjectMapper objectMapper
     ) {
         this.wordService = wordService;
-        this.pdfService = pdfService;
         this.zipService = zipService;
         this.objectMapper = objectMapper;
     }
@@ -48,9 +45,6 @@ public class DevolucionService {
             Path rutaDevolucion = wordService.generarDevolucion(datos);
             System.out.println("DEVOLUCION DOCX: " + rutaDevolucion);
 
-            Path rutaPdf = pdfService.generarPdfDevolucion(datos);
-            System.out.println("DEVOLUCION PDF: " + rutaPdf);
-
             String serial = "SinSerial";
             if (request.getEquipos() != null && !request.getEquipos().isEmpty()) {
                 serial = request.getEquipos().get(0).getSerial();
@@ -62,7 +56,7 @@ public class DevolucionService {
             String nombreZip = "Devolucion_" + serial + "_" + motivo + ".zip";
             Path rutaZip = outputDir.resolve(nombreZip);
 
-            zipService.crearZip(rutaZip, rutaDevolucion, rutaPdf);
+            zipService.crearZip(rutaZip, rutaDevolucion);
             System.out.println("ZIP DEVOLUCION CREADO: " + rutaZip);
 
             return ActaResponse.ok(nombreZip);

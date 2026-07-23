@@ -19,18 +19,15 @@ public class ActaService {
     private String generatedDir;
 
     private final DocumentoWordService wordService;
-    private final DocumentoPdfService pdfService;
     private final ZipService zipService;
     private final ObjectMapper objectMapper;
 
     public ActaService(
             DocumentoWordService wordService,
-            DocumentoPdfService pdfService,
             ZipService zipService,
             ObjectMapper objectMapper
     ) {
         this.wordService = wordService;
-        this.pdfService = pdfService;
         this.zipService = zipService;
         this.objectMapper = objectMapper;
     }
@@ -51,9 +48,6 @@ public class ActaService {
             Path rutaChecklist = wordService.generarChecklist(datos);
             System.out.println("CHECKLIST DOCX: " + rutaChecklist);
 
-            Path rutaPdf = pdfService.generarActaPdf(datos);
-            System.out.println("ACTA PDF: " + rutaPdf);
-
             String asunto = request.getAsunto()
                     .replaceAll("[^a-zA-Z0-9]", "");
 
@@ -65,7 +59,7 @@ public class ActaService {
             String nombreZip = "ActaLista_" + serial + "_" + asunto + ".zip";
             Path rutaZip = outputDir.resolve(nombreZip);
 
-            zipService.crearZip(rutaZip, rutaActa, rutaChecklist, rutaPdf);
+            zipService.crearZip(rutaZip, rutaActa, rutaChecklist);
             System.out.println("ZIP CREADO: " + rutaZip);
 
             return ActaResponse.ok(nombreZip);
