@@ -56,7 +56,62 @@ async function generarActa() {
 
         });
 
-        const errorEquipo = validarEquipos();
+        const sistemaOperativo =
+            document.querySelector(
+                'input[name="so"]:checked'
+            );
+
+        if (!sistemaOperativo) {
+
+            document
+                .querySelectorAll(
+                    'input[name="so"]'
+                )
+                .forEach(radio => {
+
+                    radio.classList.add(
+                        "radio-so-error"
+                    );
+
+                });
+
+            if (!primerCampoInvalido) {
+
+                primerCampoInvalido =
+                    document.getElementById(
+                        "so-win10"
+                    );
+
+            }
+
+        }
+        else {
+
+            document
+                .querySelectorAll(
+                    'input[name="so"]'
+                )
+                .forEach(radio => {
+
+                    radio.classList.remove(
+                        "radio-so-error"
+                    );
+
+                });
+
+        }
+
+            if (!primerCampoInvalido) {
+
+                primerCampoInvalido =
+                    document.getElementById(
+                        "so-win10"
+                    );
+
+            }
+
+        const errorEquipo =
+            validarEquipos();
 
         if (primerCampoInvalido) {
 
@@ -69,10 +124,21 @@ async function generarActa() {
                 primerCampoInvalido.focus();
             }, 300);
 
-            mostrarMensaje(
-                "Complete los campos obligatorios",
-                "error"
-            );
+            if (!sistemaOperativo) {
+
+                mostrarMensaje(
+                    "Debe seleccionar un sistema operativo",
+                    "error"
+                );
+
+            } else {
+
+                mostrarMensaje(
+                    "Complete los campos obligatorios",
+                    "error"
+                );
+
+            }
 
             return;
         }
@@ -833,7 +899,7 @@ document.addEventListener(
 window.addEventListener("load", () => {
 
     flatpickr("#fecha", {
-        dateFormat: "d-m-Y",
+        dateFormat: "Y-m-d",
         monthSelectorType: "static",
         allowInput: true
     });
@@ -952,6 +1018,56 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
         });
+    
+    document
+        .querySelectorAll(
+            'input[name="so"]'
+        )
+        .forEach(radio => {
+
+            radio.addEventListener(
+                "change",
+                () => {
+
+                    document
+                        .getElementById(
+                            "so-container"
+                        )
+                        ?.classList.remove(
+                            "is-invalid"
+                        );
+
+                }
+            );
+
+        });
+
+        document
+            .querySelectorAll(
+                'input[name="so"]'
+            )
+            .forEach(radio => {
+
+                radio.addEventListener(
+                    "change",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                'input[name="so"]'
+                            )
+                            .forEach(item => {
+
+                                item.classList.remove(
+                                    "radio-so-error"
+                                );
+
+                            });
+
+                    }
+                );
+
+            });
 
 });
 
