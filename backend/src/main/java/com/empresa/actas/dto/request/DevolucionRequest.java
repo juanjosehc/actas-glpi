@@ -6,6 +6,20 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DTO de entrada para la generación del acta de devolución.
+ *
+ * Contiene la información necesaria para generar el acta de devolución (DOCX).
+ *
+ * Diferencias con ActaRequest:
+ * - No incluye checklist ni sistema operativo.
+ * - No incluye hardware detallado (solo tipo).
+ * - Incluye campos de jefe directo (nombre + cargo).
+ * - Incluye campo cedula del entregador.
+ *
+ * Solo fecha es obligatoria con @NotBlank; los demás campos
+ * se validan en el frontend antes de enviar.
+ */
 @Data
 public class DevolucionRequest {
 

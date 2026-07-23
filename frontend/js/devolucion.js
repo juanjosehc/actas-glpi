@@ -1,920 +1,888 @@
-    async function buscarEquipo() {
+/*
+====================================================
+ACTA DE DEVOLUCIÓN - FRONTEND
+====================================================
 
-        const serial =
-            document.getElementById("serial").value;
+Responsabilidades:
 
-        const response =
-            await fetch(
-                `http://127.0.0.1:8001/equipo/${serial}`
-            );
+- Gestión de datos del acta de devolución.
+- Administración dinámica de equipos (agregar/eliminar/buscar).
+- Administración dinámica de otros elementos hardware (agregar/eliminar).
+- Validaciones de formulario y equipos.
+- Construcción del payload para el backend.
+- Descarga automática del ZIP generado.
 
-        const data =
-            await response.json();
+Diferencias con entrega:
 
-            document.getElementById("marca").value =
-                data.marca ?? "";
+- Incluye campo "Estado" por cada equipo (obligatorio).
+- No incluye checklist ni sistema operativo.
+- No incluye hardware detallado (solo tipo).
+- Incluye campos de jefe directo (nombre + cargo).
 
-            document.getElementById("tipo").value =
-                data.tipo ?? "";
+Endpoints utilizados:
 
-            document.getElementById("modelo").value =
-                data.modelo ?? "";
+- GET  /equipo/{serial}          → Consulta equipo en GLPI por serial.
+- POST /generar-devolucion       → Genera acta de devolución (DOCX).
+- GET  /descargar-acta/{archivo} → Descarga el ZIP generado.
 
-            document.getElementById("serial_acta").value =
-                document.getElementById("serial").value;
-    }
+Flujo principal:
 
-    async function generarDevolucion() {
-        console.log("ENTRO A GENERAR ACTA");
-        
-        try {
+1. Usuario completa campos obligatorios.
+2. Click en "Generar Devolución" ejecuta generarDevolucion().
+3. Se validan campos y equipos (serial, inventario, estado).
+4. Se construye el payload completo.
+5. Se envía POST al backend.
+6. Se recibe nombre del ZIP y se descarga automáticamente.
 
-            const camposObligatorios = [
+====================================================
+*/
 
-                "fecha",
-                "entregado_por",
-                "cedula",
-                "cargo_entrega",
-                "recibido_por",
-                "cargo_recibe",
-                "area_recibe",
-                "motivo",
-                "nombre_jefe",
-                "cargo_jefe"
+/**
+ * Genera el acta de devolución.
+ *
+ * Flujo:
+ * 1. Validar campos obligatorios (fecha, entregado_por, cedula, etc.).
+ * 2. Validar que cada equipo tenga serial, inventario y estado.
+ * 3. Construir objetos de hardware y equipos.
+ * 4. Armar el payload completo con campos de jefe directo.
+ * 5. Enviar POST a /generar-devolucion.
+ * 6. Descargar el ZIP resultante vía /descargar-acta.
+ */
+async function generarDevolucion() {
 
-            ];
+    try {
 
-            let primerCampoInvalido = null;
+        const camposObligatorios = [
 
-            camposObligatorios.forEach(id => {
+            "fecha",
+            "entregado_por",
+            "cedula",
+            "cargo_entrega",
+            "recibido_por",
+            "cargo_recibe",
+            "area_recibe",
+            "motivo",
+            "nombre_jefe",
+            "cargo_jefe"
 
-                const valido = validarCampo(id);
+        ];
 
-                if (!valido && !primerCampoInvalido) {
+        let primerCampoInvalido = null;
 
-                    primerCampoInvalido =
-                        document.getElementById(id);
+        camposObligatorios.forEach(id => {
 
-                }
+            const valido = validarCampo(id);
 
+            if (!valido && !primerCampoInvalido) {
+
+                primerCampoInvalido =
+                    document.getElementById(id);
+
+            }
+
+        });
+
+        const errorEquipo = validarEquipos();
+
+        if (primerCampoInvalido) {
+
+            primerCampoInvalido.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
             });
 
-            const errorEquipo = validarEquipos();
-
-            if (primerCampoInvalido) {
-
-                primerCampoInvalido.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-                setTimeout(() => {
-                    primerCampoInvalido.focus();
-                }, 300);
-
-                mostrarMensaje(
-                    "Complete los campos obligatorios",
-                    "error"
-                );
-
-                return;
-            }
-
-            if (errorEquipo) {
-
-                errorEquipo.elemento.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
-
-                setTimeout(() => {
-                    errorEquipo.elemento.focus();
-                }, 300);
-
-                mostrarMensaje(
-                    `Debe completar: ${errorEquipo.nombre}`,
-                    "error"
-                );
-
-                return;
-            }
-
-            const hardware = [];
-            const checklist = {};
-
-            for (let i = 1; i <= 36; i++) {
-
-                checklist[`chk_${i}`] =
-                    document.getElementById(
-                        `chk_${i}`
-                    )?.checked ?? false;
-
-            }
-
-            document
-                .querySelectorAll(".hardware-item")
-                .forEach(item => {
-
-                    hardware.push({
-
-                        tipo:
-                            item.querySelector(
-                                "[data-tipo]"
-                            ).value,
-                    });
-
-                });
-
-            const equipos = [];
-
-            document
-                .querySelectorAll(".equipo-item")
-                .forEach(item => {
-
-                    equipos.push({
-
-                        serial:
-                            item.querySelector(
-                                "[data-serial]"
-                            ).value,
-
-                        marca:
-                            item.querySelector(
-                                "[data-marca]"
-                            ).value,
-
-                        tipo:
-                            item.querySelector(
-                                "[data-tipo]"
-                            ).value,
-
-                        modelo:
-                            item.querySelector(
-                                "[data-modelo]"
-                            ).value,
-
-                        inventario:
-                            item.querySelector(
-                                "[data-inventario]"
-                            ).value,
-
-                        estado:
-                            item.querySelector(
-                                "[data-estado]"
-                            ).value
-
-                    });
-
-                });
-
-            if (
-                !document.getElementById(
-                    "fecha"
-                ).value
-            ) {
-
-                mostrarMensaje(
-                    "Debe seleccionar una fecha",
-                    "error"
-                );
-
-                return;
-
-            }
-
-            const payload = {
-
-                fecha:
-                    document.getElementById("fecha")?.value || "",
-
-                recibido_por:
-                    document.getElementById("recibido_por")?.value || "",
-
-                entregado_por:
-                    document.getElementById("entregado_por")?.value || "",
-
-                cargo_recibe:
-                    document.getElementById("cargo_recibe")?.value || "",
-
-                cargo_entrega:
-                    document.getElementById("cargo_entrega")?.value || "",
-
-                cedula:
-                    document.getElementById("cedula")?.value || "",
-
-                area_recibe:
-                    document.getElementById("area_recibe")?.value || "",
-
-                motivo:
-                    document.getElementById("motivo")?.value || "",
-
-                nombre_jefe:
-                    document.getElementById("nombre_jefe")?.value || "",
-
-                cargo_jefe:
-                    document.getElementById("cargo_jefe")?.value || "",
-
-                hardware:
-                    hardware,
-
-                equipos:
-                    equipos,
-
-                observaciones:
-                    document.getElementById("observaciones")?.value || ""
-
-            };
-
-            console.log("ANTES DEL FETCH");
-
-            const response = await fetch(
-                "http://127.0.0.1:8001/generar-devolucion",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(payload)
-                }
-            );
-
-            console.log("DESPUES DEL FETCH");
-
-            if (!response.ok) {
-
-                const errorData =
-                    await response.json();
-
-                throw new Error(
-                    errorData.mensaje ||
-                    "No fue posible generar la documentación"
-                );
-
-            }
-
-            const result =
-                await response.json();
-
-            console.log("RESULTADO:", result);
-
-            if (!result.success) {
-
-                throw new Error(
-                    result.mensaje ||
-                    "Error generando la documentación"
-                );
-
-            }
+            setTimeout(() => {
+                primerCampoInvalido.focus();
+            }, 300);
 
             mostrarMensaje(
-                "Documentación generada correctamente",
-                "success"
-            );
-
-            console.log("INICIANDO DESCARGA:", result.nombre_zip);
-
-            const descargaResponse = await fetch(
-                "http://127.0.0.1:8001/descargar-acta/" +
-                result.nombre_zip
-            );
-
-            console.log("RESPUESTA DESCARGA:", descargaResponse.status);
-
-            if (!descargaResponse.ok) {
-                throw new Error("Error descargando el archivo");
-            }
-
-            const blob =
-                await descargaResponse.blob();
-
-            const blobUrl =
-                URL.createObjectURL(blob);
-
-            const linkDescarga =
-                document.createElement("a");
-
-            linkDescarga.href = blobUrl;
-
-            linkDescarga.download =
-                result.nombre_zip;
-
-            document.body.appendChild(
-                linkDescarga
-            );
-
-            linkDescarga.click();
-
-            linkDescarga.remove();
-
-            URL.revokeObjectURL(blobUrl);
-
-
-        }
-
-        catch (error) {
-
-            console.error("ERROR COMPLETO:", error);
-            console.error("MENSAJE:", error.message);
-
-            mostrarMensaje(
-                "Error generando la documentación: " + error.message,
-                "error"
-            );
-
-        }
-
-    }
-
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-
-            const btnHardware =
-                document.getElementById(
-                    "btn-add-hardware"
-                );
-
-            if (btnHardware) {
-
-                btnHardware.addEventListener(
-                    "click",
-                    agregarHardware
-                );
-
-            }
-
-            const btnEquipo =
-                document.getElementById(
-                    "btn-add-equipo"
-                );
-
-            if (btnEquipo) {
-
-                btnEquipo.addEventListener(
-                    "click",
-                    agregarEquipo
-                );
-
-            }
-
-            agregarEquipo();
-
-            agregarHardware();
-
-        }
-    );
-
-    function agregarHardware() {
-
-        const container =
-            document.getElementById(
-                "hardware-container"
-            );
-
-        if (
-            container.querySelectorAll(
-                ".hardware-item"
-            ).length >= 11
-        ) {
-
-            mostrarMensaje(
-                "Máximo 11 registros",
+                "Complete los campos obligatorios",
                 "error"
             );
 
             return;
         }
 
-        const numeroHardware =
-            container.querySelectorAll(
-                ".hardware-item"
-            ).length + 1;
+        if (errorEquipo) {
 
-        const fila =
-            document.createElement(
-                "div"
+            errorEquipo.elemento.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            setTimeout(() => {
+                errorEquipo.elemento.focus();
+            }, 300);
+
+            mostrarMensaje(
+                `Debe completar: ${errorEquipo.nombre}`,
+                "error"
             );
 
-        fila.className =
-            "hardware-item";
+            return;
+        }
 
-        fila.innerHTML = `
+        const hardware = [];
 
-            <div class="card border border-base-300 shadow-md">
+        document
+            .querySelectorAll(".hardware-item")
+            .forEach(item => {
 
-                <div class="card-body p-2">
+                hardware.push({
 
-                    <div class="item-header">
+                    tipo:
+                        item.querySelector(
+                            "[data-tipo]"
+                        ).value,
 
-                        <h4>
-                            Hardware     ${numeroHardware}
-                        </h4>
+                });
 
-                        <button
-                            type="button"
-                            data-eliminar
-                            class="btn btn-outline">
+            });
 
-                            Eliminar
+        const equipos = [];
 
-                        </button>
+        document
+            .querySelectorAll(".equipo-item")
+            .forEach(item => {
 
-                    </div>
+                equipos.push({
 
-                    <div class="input-floating w-full mb-1">
+                    serial:
+                        item.querySelector(
+                            "[data-serial]"
+                        ).value,
+
+                    marca:
+                        item.querySelector(
+                            "[data-marca]"
+                        ).value,
+
+                    tipo:
+                        item.querySelector(
+                            "[data-tipo]"
+                        ).value,
+
+                    modelo:
+                        item.querySelector(
+                            "[data-modelo]"
+                        ).value,
+
+                    inventario:
+                        item.querySelector(
+                            "[data-inventario]"
+                        ).value,
+
+                    estado:
+                        item.querySelector(
+                            "[data-estado]"
+                        ).value
+
+                });
+
+            });
+
+        if (
+            !document.getElementById(
+                "fecha"
+            ).value
+        ) {
+
+            mostrarMensaje(
+                "Debe seleccionar una fecha",
+                "error"
+            );
+
+            return;
+
+        }
+
+        const payload = {
+
+            fecha:
+                document.getElementById("fecha")?.value || "",
+
+            recibido_por:
+                document.getElementById("recibido_por")?.value || "",
+
+            entregado_por:
+                document.getElementById("entregado_por")?.value || "",
+
+            cargo_recibe:
+                document.getElementById("cargo_recibe")?.value || "",
+
+            cargo_entrega:
+                document.getElementById("cargo_entrega")?.value || "",
+
+            cedula:
+                document.getElementById("cedula")?.value || "",
+
+            area_recibe:
+                document.getElementById("area_recibe")?.value || "",
+
+            motivo:
+                document.getElementById("motivo")?.value || "",
+
+            nombre_jefe:
+                document.getElementById("nombre_jefe")?.value || "",
+
+            cargo_jefe:
+                document.getElementById("cargo_jefe")?.value || "",
+
+            hardware:
+                hardware,
+
+            equipos:
+                equipos,
+
+            observaciones:
+                document.getElementById("observaciones")?.value || ""
+
+        };
+
+        const response = await fetch(
+            "http://127.0.0.1:8001/generar-devolucion",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        if (!response.ok) {
+
+            const errorData =
+                await response.json();
+
+            throw new Error(
+                errorData.mensaje ||
+                "No fue posible generar la documentación"
+            );
+
+        }
+
+        const result =
+            await response.json();
+
+        if (!result.success) {
+
+            throw new Error(
+                result.mensaje ||
+                "Error generando la documentación"
+            );
+
+        }
+
+        mostrarMensaje(
+            "Documentación generada correctamente",
+            "success"
+        );
+
+        const descargaResponse = await fetch(
+            "http://127.0.0.1:8001/descargar-acta/" +
+            result.nombre_zip
+        );
+
+        if (!descargaResponse.ok) {
+            throw new Error("Error descargando el archivo");
+        }
+
+        const blob =
+            await descargaResponse.blob();
+
+        const blobUrl =
+            URL.createObjectURL(blob);
+
+        const linkDescarga =
+            document.createElement("a");
+
+        linkDescarga.href = blobUrl;
+
+        linkDescarga.download =
+            result.nombre_zip;
+
+        document.body.appendChild(
+            linkDescarga
+        );
+
+        linkDescarga.click();
+
+        linkDescarga.remove();
+
+        URL.revokeObjectURL(blobUrl);
+
+
+    }
+
+    catch (error) {
+
+        mostrarMensaje(
+            "Error generando la documentación: " + error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/*
+----------------------------------------------------
+INICIALIZACIÓN
+----------------------------------------------------
+*/
+
+/**
+ * Inicializa la página al cargar el DOM.
+ *
+ * Acciones:
+ * - Vincula botones de agregar hardware y equipo.
+ * - Crea un equipo y un hardware vacíos por defecto.
+ * - Limpia errores de validación al escribir en cualquier campo.
+ * - Inicializa el datepicker en el campo de fecha.
+ */
+document.addEventListener("DOMContentLoaded", () => {
+
+    const btnHardware =
+        document.getElementById("btn-add-hardware");
+
+    if (btnHardware) {
+        btnHardware.addEventListener("click", agregarHardware);
+    }
+
+    const btnEquipo =
+        document.getElementById("btn-add-equipo");
+
+    if (btnEquipo) {
+        btnEquipo.addEventListener("click", agregarEquipo);
+    }
+
+    agregarEquipo();
+    agregarHardware();
+
+    document
+        .querySelectorAll(".input, .textarea")
+        .forEach(campo => {
+
+            campo.addEventListener("input", () => {
+
+                if (campo.value.trim()) {
+
+                    campo.classList.remove("is-invalid");
+
+                    const helper =
+                        campo.parentElement.querySelector(
+                            ".helper-text"
+                        );
+
+                    if (helper) {
+                        helper.style.display = "none";
+                    }
+                }
+
+            });
+
+        });
+
+    flatpickr("#fecha", {
+        dateFormat: "Y-m-d",
+        monthSelectorType: "static",
+        allowInput: true
+    });
+
+});
+
+/*
+----------------------------------------------------
+ADMINISTRACIÓN DINÁMICA DE HARDWARE (OTROS ELEMENTOS)
+----------------------------------------------------
+*/
+
+/**
+ * Agrega un nuevo registro de hardware al formulario.
+ *
+ * En devolución solo se captura el tipo de hardware
+ * (sin descripción ni programa como en entrega).
+ * Límite máximo: 11 registros. No se permite eliminar
+ * el último registro existente.
+ */
+function agregarHardware() {
+
+    const container =
+        document.getElementById("hardware-container");
+
+    if (
+        container.querySelectorAll(".hardware-item").length >= 11
+    ) {
+
+        mostrarMensaje(
+            "Máximo 11 registros",
+            "error"
+        );
+
+        return;
+    }
+
+    const numeroHardware =
+        container.querySelectorAll(".hardware-item").length + 1;
+
+    const fila =
+        document.createElement("div");
+
+    fila.className = "hardware-item";
+
+    fila.innerHTML = `
+
+        <div class="card border border-base-300 shadow-md">
+
+            <div class="card-body p-2">
+
+                <div class="item-header">
+
+                    <h4>
+                        Hardware     ${numeroHardware}
+                    </h4>
+
+                    <button
+                        type="button"
+                        data-eliminar
+                        class="btn btn-outline">
+
+                        Eliminar
+
+                    </button>
+
+                </div>
+
+                <div class="input-floating w-full mb-1">
+
+                <input
+                    type="text"
+                    class="input"
+                    placeholder=" "
+                    data-tipo />
+
+                <label class="input-floating-label">
+
+                    Tipo Hardware
+
+                </label>
+
+            </div>
+
+        </div>
+
+    `;
+
+    fila
+        .querySelector("[data-eliminar]")
+        .addEventListener("click", () => {
+
+            if (
+                document.querySelectorAll(".hardware-item").length === 1
+            ) {
+
+                mostrarMensaje(
+                    "Debe existir al menos un hardware",
+                    "error"
+                );
+
+                return;
+
+            }
+
+            fila.remove();
+
+            renumerarHardware();
+
+        });
+
+    container.appendChild(fila);
+
+    renumerarHardware();
+
+}
+
+/*
+----------------------------------------------------
+ADMINISTRACIÓN DINÁMICA DE EQUIPOS
+----------------------------------------------------
+*/
+
+/**
+ * Agrega un nuevo bloque de equipo al formulario.
+ *
+ * En devolución cada equipo incluye campo adicional "Estado".
+ * Cada bloque contiene: serial, botón buscar, marca, tipo,
+ * modelo, inventario y estado. Marca/tipo/modelo se
+ * autocompletan desde GLPI al hacer click en "Buscar".
+ * Se validan serial, inventario y estado antes de enviar.
+ * Límite mínimo: 1 equipo (no se puede eliminar el último).
+ */
+function agregarEquipo() {
+
+    const container =
+        document.getElementById("equipos-container");
+
+    const numeroEquipo =
+        container.querySelectorAll(".equipo-item").length + 1;
+
+    const equipo =
+        document.createElement("div");
+
+    equipo.className = "equipo-item";
+
+    equipo.innerHTML = `
+
+        <div class="card border border-base-300 shadow-sm">
+
+            <div class="card-body p-2">
+
+                <div class="item-header">
+
+                    <h4>
+                        Equipo ${numeroEquipo}
+                    </h4>
+
+                    <button
+                        type="button"
+                        data-eliminar
+                        class="btn btn-outline">
+
+                        Eliminar
+
+                    </button>
+
+                </div>
+                <div class="input-floating w-full mb-1">
 
                     <input
                         type="text"
                         class="input"
                         placeholder=" "
-                        data-tipo />
+                        data-serial />
 
                     <label class="input-floating-label">
 
-                        Tipo Hardware
+                        Serial
 
                     </label>
 
                 </div>
+
+                <button
+                    type="button"
+                    data-buscar
+                    class="btn btn-outline mb-4">
+
+                    Buscar
+
+                </button>
+
+                <div class="input-floating w-full mb-1">
+
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-marca
+                    disabled />
+
+                <label class="input-floating-label">
+                    Marca
+                </label>
 
             </div>
 
-        `;
+            <div class="input-floating w-full mb-1">
 
-        fila
-            .querySelector(
-                "[data-eliminar]"
-            )
-            .addEventListener(
-                "click",
-                () => {
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-tipo
+                    disabled />
 
-                    if (
-                        document.querySelectorAll(
-                            ".hardware-item"
-                        ).length === 1
-                    ) {
-
-                        mostrarMensaje(
-                            "Debe existir al menos un hardware",
-                            "error"
-                        );
-
-                        return;
-
-                    }
-
-                    fila.remove();
-
-                    renumerarHardware();
-
-                }
-            );
-
-        container.appendChild(
-            fila
-        );
-
-        renumerarHardware();
-
-    }
-
-    function agregarEquipo() {
-
-        const container =
-            document.getElementById(
-                "equipos-container"
-            );
-
-        const numeroEquipo =
-            container.querySelectorAll(
-                ".equipo-item"
-            ).length + 1;
-
-        const equipo =
-            document.createElement(
-                "div"
-            );
-
-        equipo.className =
-            "equipo-item";
-
-        equipo.innerHTML = `
-
-            <div class="card border border-base-300 shadow-sm">
-
-                <div class="card-body p-2">
-
-                    <div class="item-header">
-
-                        <h4>
-                            Equipo ${numeroEquipo}
-                        </h4>
-
-                        <button
-                            type="button"
-                            data-eliminar
-                            class="btn btn-outline">
-
-                            Eliminar
-
-                        </button>
-
-                    </div>
-                    <div class="input-floating w-full mb-1">
-
-                        <input
-                            type="text"
-                            class="input"
-                            placeholder=" "
-                            data-serial />
-
-                        <label class="input-floating-label">
-
-                            Serial
-
-                        </label>
-
-
-                    </div>
-
-                    <button
-                        type="button"
-                        data-buscar
-                        class="btn btn-outline mb-4">
-
-                        Buscar
-
-                    </button>
-
-                    <div class="input-floating w-full mb-1">
-
-                    <input
-                        class="input"
-                        placeholder=" "
-                        data-marca
-                        disabled />
-
-                    <label class="input-floating-label">
-                        Marca
-                    </label>
-
-                </div>
-
-                <div class="input-floating w-full mb-1">
-
-                    <input
-                        class="input"
-                        placeholder=" "
-                        data-tipo
-                        disabled />
-
-                    <label class="input-floating-label">
-                        Tipo
-                    </label>
-
-                </div>
-
-                <div class="input-floating w-full mb-1">
-
-                    <input
-                        class="input"
-                        placeholder=" "
-                        data-modelo
-                        disabled />
-
-                    <label class="input-floating-label">
-                        Modelo
-                    </label>
-
-                </div>
-
-                <div class="input-floating w-full mb-1">
-
-                    <input
-                        class="input"
-                        placeholder=" "
-                        data-inventario />
-
-                    <label class="input-floating-label">
-                        Inventario
-                    </label>
-
-                </div>
-
-                <div class="input-floating w-full">
-
-                    <input
-                        class="input"
-                        placeholder=" "
-                        data-estado />
-
-                    <label class="input-floating-label">
-                        Estado
-                    </label>
-
-                </div>
-
-                </div>
+                <label class="input-floating-label">
+                    Tipo
+                </label>
 
             </div>
 
-        `;
+            <div class="input-floating w-full mb-1">
 
-        container.appendChild(
-            equipo
-        );
-        
-        equipo
-            .querySelectorAll(".input")
-            .forEach(campo => {
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-modelo
+                    disabled />
 
-                campo.addEventListener(
-                    "input",
-                    () => {
+                <label class="input-floating-label">
+                    Modelo
+                </label>
 
-                        if (campo.value.trim()) {
+            </div>
 
-                            campo.classList.remove(
-                                "is-invalid"
-                            );
+            <div class="input-floating w-full mb-1">
 
-                        }
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-inventario />
 
-                    }
-                );
+                <label class="input-floating-label">
+                    Inventario
+                </label>
 
-            });
+            </div>
 
+            <div class="input-floating w-full">
 
-        renumerarEquipos();
+                <input
+                    class="input"
+                    placeholder=" "
+                    data-estado />
 
-        equipo
-            .querySelector(
-                "[data-buscar]"
-            )
-            .addEventListener(
-                "click",
-                () => buscarEquipoBloque(
-                    equipo
-                )
-            );
+                <label class="input-floating-label">
+                    Estado
+                </label>
 
-        equipo
-            .querySelector(
-                "[data-eliminar]"
-            )
-            .addEventListener(
-                "click",
-                () => {
+            </div>
 
-                    if (
-                        document.querySelectorAll(
-                            ".equipo-item"
-                        ).length === 1
-                    ) {
+            </div>
 
-                        mostrarMensaje(
-                            "Debe existir al menos un equipo",
-                            "error"
-                        );
+        </div>
 
-                        return;
+    `;
 
-                    }
+    container.appendChild(equipo);
 
-                    equipo.remove();
+    equipo
+        .querySelectorAll(".input")
+        .forEach(campo => {
 
-                    renumerarEquipos();
+            campo.addEventListener("input", () => {
+
+                if (campo.value.trim()) {
+
+                    campo.classList.remove("is-invalid");
 
                 }
-            );
-
-    }
-
-    async function buscarEquipoBloque(
-        bloque
-    ) {
-
-        const serial =
-            bloque.querySelector(
-                "[data-serial]"
-            ).value;
-
-        const response =
-            await fetch(
-                `http://127.0.0.1:8001/equipo/${serial}`
-            );
-
-        const data =
-            await response.json();
-
-        bloque.querySelector(
-            "[data-marca]"
-        ).value =
-            data.marca ?? "";
-
-        bloque.querySelector(
-            "[data-tipo]"
-        ).value =
-            data.tipo ?? "";
-
-        bloque.querySelector(
-            "[data-modelo]"
-        ).value =
-            data.modelo ?? "";
-
-    }
-
-    function renumerarEquipos() {
-
-        document
-            .querySelectorAll(".equipo-item")
-            .forEach((equipo, index) => {
-
-                equipo.querySelector("h4").textContent =
-                    `Equipo ${index + 1}`;
 
             });
 
-    }
-
-    function renumerarHardware() {
-
-        document
-            .querySelectorAll(".hardware-item")
-            .forEach((hardware, index) => {
-
-                hardware.querySelector("h4").textContent =
-                    `Hardware ${index + 1}`;
-
-            });
-
-    }
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-
-            const entregadoPor =
-                document.getElementById(
-                    "entregado_por"
-                );
-
-            const responsable =
-                document.getElementById(
-                    "responsable_verificacion"
-                );
-
-            if (
-                entregadoPor &&
-                responsable
-            ) {
-
-                entregadoPor.addEventListener(
-                    "input",
-                    () => {
-
-                        responsable.value =
-                            entregadoPor.value;
-
-                    }
-                );
-
-            }
-
-        }
-    );
-
-    window.addEventListener("load", () => {
-
-        flatpickr("#fecha", {
-            dateFormat: "Y-m-d",
-            monthSelectorType: "static",
-            allowInput: true
         });
 
-    });
+    renumerarEquipos();
 
-    function validarCampo(id) {
-        
-        const campo =
-            document.getElementById(id);
+    equipo
+        .querySelector("[data-buscar]")
+        .addEventListener("click", () => buscarEquipoBloque(equipo));
 
-        const helper =
-            campo.parentElement.querySelector(
-                ".helper-text"
-            );
+    equipo
+        .querySelector("[data-eliminar]")
+        .addEventListener("click", () => {
 
-        const vacio =
-            !campo.value.trim();
+            if (
+                document.querySelectorAll(".equipo-item").length === 1
+            ) {
 
-        if (vacio) {
+                mostrarMensaje(
+                    "Debe existir al menos un equipo",
+                    "error"
+                );
 
-            campo.classList.add("is-invalid");
+                return;
 
-            if (helper) {
-                helper.style.display = "block";
             }
 
-            return false;
-        }
+            equipo.remove();
 
-        campo.classList.remove("is-invalid");
+            renumerarEquipos();
+
+        });
+
+}
+
+/**
+ * Consulta GLPI por serial y auto completa marca, tipo y modelo.
+ *
+ * Endpoint: GET /equipo/{serial}
+ * Los campos se actualizan dentro del bloque del equipo
+ * al que pertenece el botón "Buscar".
+ *
+ * @param {HTMLElement} bloque - Elemento .equipo-item que contiene los campos.
+ */
+async function buscarEquipoBloque(bloque) {
+
+    const serial =
+        bloque.querySelector("[data-serial]").value;
+
+    const response =
+        await fetch(`http://127.0.0.1:8001/equipo/${serial}`);
+
+    const data =
+        await response.json();
+
+    bloque.querySelector("[data-marca]").value =
+        data.marca ?? "";
+
+    bloque.querySelector("[data-tipo]").value =
+        data.tipo ?? "";
+
+    bloque.querySelector("[data-modelo]").value =
+        data.modelo ?? "";
+
+}
+
+/*
+----------------------------------------------------
+UTILIDADES DE RENUMERACIÓN
+----------------------------------------------------
+*/
+
+/**
+ * Actualiza los títulos "Equipo N" después de agregar o eliminar.
+ *
+ * Recorre todos los .equipo-item y asigna el número
+ * secuencial basado en su posición actual en el DOM.
+ */
+function renumerarEquipos() {
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            equipo.querySelector("h4").textContent =
+                `Equipo ${index + 1}`;
+
+        });
+
+}
+
+/**
+ * Actualiza los títulos "Hardware N" después de agregar o eliminar.
+ *
+ * Mismo comportamiento que renumerarEquipos pero para
+ * los bloques de hardware.
+ */
+function renumerarHardware() {
+
+    document
+        .querySelectorAll(".hardware-item")
+        .forEach((hardware, index) => {
+
+            hardware.querySelector("h4").textContent =
+                `Hardware ${index + 1}`;
+
+        });
+
+}
+
+/*
+----------------------------------------------------
+VALIDACIONES
+----------------------------------------------------
+*/
+
+/**
+ * Valida un campo obligatorio por su ID.
+ *
+ * Aplica la clase "is-invalid" y muestra el helper-text
+ * si el campo está vacío. Remueve ambos si tiene valor.
+ *
+ * @param {string} id - ID del elemento input a validar.
+ * @returns {boolean} true si el campo tiene valor, false si está vacío.
+ */
+function validarCampo(id) {
+
+    const campo =
+        document.getElementById(id);
+
+    const helper =
+        campo.parentElement.querySelector(".helper-text");
+
+    const vacio =
+        !campo.value.trim();
+
+    if (vacio) {
+
+        campo.classList.add("is-invalid");
 
         if (helper) {
-            helper.style.display = "none";
+            helper.style.display = "block";
         }
 
-        return true;
+        return false;
     }
 
-    function validarEquipos() {
+    campo.classList.remove("is-invalid");
 
-        let primerError = null;
+    if (helper) {
+        helper.style.display = "none";
+    }
 
-        document
-            .querySelectorAll(".equipo-item")
-            .forEach((equipo, index) => {
+    return true;
+}
 
-                const campos = [
-                    {
-                        elemento: equipo.querySelector("[data-serial]"),
-                        nombre: `Serial del Equipo ${index + 1}`
-                    },
-                    {
-                        elemento: equipo.querySelector("[data-inventario]"),
-                        nombre: `Inventario del Equipo ${index + 1}`
-                    },
-                    {
-                        elemento: equipo.querySelector("[data-estado]"),
-                        nombre: `Estado del Equipo ${index + 1}`
+/**
+ * Valida los equipos agregados dinámicamente.
+ *
+ * En devolución valida tres campos por equipo: serial, inventario y estado.
+ * Retorna el primer error encontrado para permitir scroll
+ * automático y foco en el campo inválido.
+ *
+ * @returns {Object|null} Primer error: { elemento, nombre } o null si todo es válido.
+ */
+function validarEquipos() {
+
+    let primerError = null;
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            const campos = [
+                {
+                    elemento: equipo.querySelector("[data-serial]"),
+                    nombre: `Serial del Equipo ${index + 1}`
+                },
+                {
+                    elemento: equipo.querySelector("[data-inventario]"),
+                    nombre: `Inventario del Equipo ${index + 1}`
+                },
+                {
+                    elemento: equipo.querySelector("[data-estado]"),
+                    nombre: `Estado del Equipo ${index + 1}`
+                }
+            ];
+
+            campos.forEach(campo => {
+
+                const vacio =
+                    !campo.elemento?.value?.trim();
+
+                if (vacio) {
+
+                    campo.elemento.classList.add("is-invalid");
+
+                    if (!primerError) {
+
+                        primerError = {
+                            elemento: campo.elemento,
+                            nombre: campo.nombre
+                        };
+
                     }
-                ];
 
-                campos.forEach(campo => {
+                } else {
 
-                    const vacio =
-                        !campo.elemento?.value?.trim();
+                    campo.elemento.classList.remove("is-invalid");
 
-                    if (vacio) {
-
-                        campo.elemento.classList.add(
-                            "is-invalid"
-                        );
-
-                        if (!primerError) {
-
-                            primerError = {
-                                elemento: campo.elemento,
-                                nombre: campo.nombre
-                            };
-
-                        }
-
-                    } else {
-
-                        campo.elemento.classList.remove(
-                            "is-invalid"
-                        );
-
-                    }
-
-                });
+                }
 
             });
 
-        return primerError;
-    }
+        });
 
-    document.addEventListener("DOMContentLoaded", () => {
-
-        document
-            .querySelectorAll(".input, .textarea")
-            .forEach(campo => {
-
-                campo.addEventListener("input", () => {
-
-                    if (campo.value.trim()) {
-
-                        campo.classList.remove("is-invalid");
-
-                        const helper =
-                            campo.parentElement.querySelector(
-                                ".helper-text"
-                            );
-
-                        if (helper) {
-                            helper.style.display = "none";
-                        }
-                    }
-
-                });
-
-            });
-
-    });
-
-
-
+    return primerError;
+}

@@ -14,6 +14,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio de generación de documentos Word (DOCX).
+ *
+ * Responsabilidades:
+ * - Preparar los datos del request para los templates.
+ * - Generar acta de entrega, checklist y acta de devolución.
+ * - Delegar el reemplazo de placeholders a DocxTemplateEngine.
+ *
+ * Cada método:
+ * 1. Prepara datos (fecha descompuesta, hardware/equipos indexados).
+ * 2. Convierte todo a Map<String, String> para el template engine.
+ * 3. Resuelve la ruta del template.
+ * 4. Genera el nombre del archivo de salida.
+ * 5. Procesa el template y retorna la ruta del DOCX generado.
+ *
+ * Límites por template:
+ * - Acta entrega: 11 hardware items, 10 equipos.
+ * - Checklist: 36 checkboxes, 1 equipo (primero).
+ * - Devolución: 10 equipos con estado, 10 otros elementos.
+ */
 @Service
 public class DocumentoWordService {
 
@@ -25,6 +45,21 @@ public class DocumentoWordService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+    /**
+     * Genera el acta de entrega (DOCX).
+     *
+     * Prepara:
+     * - Fecha descompuesta en dia, mes, anio.
+     * - 11 items de hardware indexados (hw_N_tipo, hw_N_descripcion, hw_N_programa).
+     * - 10 equipos indexados (eq_N_marca, eq_N_tipo, eq_N_modelo, eq_N_serial, eq_N_inventario).
+     *
+     * Template: "Acta de Entrega 2 2 - copia.docx"
+     * Salida: ActaEntrega_{serial}_{asunto}.docx
+     *
+     * @param datos Mapa de datos con el contenido del acta.
+     * @return Ruta del DOCX generado.
+     * @throws IOException Si hay error de E/S al leer template o escribir salida.
+     */
     public Path generarActa(Map<String, Object> datos) throws IOException {
 
         Path outputDir = Paths.get(generatedDir);
@@ -89,6 +124,23 @@ public class DocumentoWordService {
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
 
+    /**
+     * Genera la lista de chequeo (DOCX).
+     *
+     * Prepara:
+     * - Fecha descompuesta en dia, mes, anio.
+     * - responsable_verificacion = entregado_por.
+     * - Sistema operativo como checkboxes (win10, win11, macos) con cuadrados.
+     * - 36 checkboxes (chk_N_si / chk_N_no) con cuadrados marcado/desmarcado.
+     * - Solo el primer equipo (para la sección de identificación).
+     *
+     * Template: "ListaChequeo.docx"
+     * Salida: Checklist_{serial}_{asunto}.docx
+     *
+     * @param datos Mapa de datos con el contenido del checklist.
+     * @return Ruta del DOCX generado.
+     * @throws IOException Si hay error de E/S al leer template o escribir salida.
+     */
     public Path generarChecklist(Map<String, Object> datos) throws IOException {
 
         Path outputDir = Paths.get(generatedDir);
@@ -155,6 +207,21 @@ public class DocumentoWordService {
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
 
+    /**
+     * Genera el acta de devolución (DOCX).
+     *
+     * Prepara:
+     * - Fecha descompuesta en dia, mes, anio.
+     * - 10 equipos indexados con campo estado adicional.
+     * - 10 "otros elementos" indexados (ot_N_tipo).
+     *
+     * Template: "ActaDevolucion.docx"
+     * Salida: Devolucion_{serial}_{motivo}.docx
+     *
+     * @param datos Mapa de datos con el contenido del acta de devolución.
+     * @return Ruta del DOCX generado.
+     * @throws IOException Si hay error de E/S al leer template o escribir salida.
+     */
     public Path generarDevolucion(Map<String, Object> datos) throws IOException {
 
         Path outputDir = Paths.get(generatedDir);
@@ -217,6 +284,17 @@ public class DocumentoWordService {
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
 
+    /**
+     * Resuelve la ruta de un template DOCX.
+     *
+     * Soporta dos modos:
+     * - classpath: Copia el recurso a un directorio temporal.
+     * - ruta directa: Resuelve相对于 templatesDir.
+     *
+     * @param templateName Nombre del archivo template.
+     * @return Ruta resuelta del template.
+     * @throws IOException Si el template no se puede copiar o leer.
+     */
     private Path resolveTemplate(String templateName) throws IOException {
         if (templatesDir.startsWith("classpath:")) {
             String classpath = templatesDir.substring("classpath:".length());
@@ -231,6 +309,12 @@ public class DocumentoWordService {
         return Paths.get(templatesDir, templateName);
     }
 
+    /**
+     * Convierte un objeto a List<Map<String, Object>> de forma segura.
+     *
+     * @param obj Objeto a convertir (se espera instanceof List).
+     * @return Lista de mapas, o lista vacía si la conversión falla.
+     */
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> asMapList(Object obj) {
         if (obj instanceof List<?> list) {
@@ -239,6 +323,12 @@ public class DocumentoWordService {
         return List.of();
     }
 
+    /**
+     * Convierte un objeto a Map<String, Object> de forma segura.
+     *
+     * @param obj Objeto a convertir (se espera instanceof Map).
+     * @return Mapa, o mapa vacío si la conversión falla.
+     */
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object obj) {
         if (obj instanceof Map<?, ?> map) {
@@ -247,6 +337,14 @@ public class DocumentoWordService {
         return Map.of();
     }
 
+    /**
+     * Descompone la fecha ISO (yyyy-MM-dd) en dia, mes y anio.
+     *
+     * Agrega al mapa las claves "dia", "mes" y "anio" con formato de dos dígitos.
+     * Si la fecha no se puede parsear, establece valores vacíos.
+     *
+     * @param datos Mapa de datos donde se agregarán las claves de fecha.
+     */
     private void prepararFecha(Map<String, Object> datos) {
         String fechaStr = datos.getOrDefault("fecha", "").toString();
         try {
