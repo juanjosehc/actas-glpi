@@ -761,3 +761,21 @@ textarea {
     height: calc(75vh - 100px);
     overflow-y: auto;
 }
+
+.helper-text {
+    display: none;
+}
+
+.input.is-invalid {
+    border-color: #ef4444 !important;
+}
+
+.input.is-invalid:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.input-floating:has(.input.is-invalid)
+.input-floating-label {
+    color: #ef4444 !important;
+}
