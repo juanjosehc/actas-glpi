@@ -12,6 +12,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+/**
+ * Servicio orquestador para la generación del acta de devolución.
+ *
+ * Flujo:
+ * 1. Crear directorio de salida si no existe.
+ * 2. Convertir DevolucionRequest a Map<String, Object> para el motor de templates.
+ * 3. Generar acta de devolución (DOCX) vía DocumentoWordService.
+ * 4. Empaquetar el DOCX en un ZIP vía ZipService.
+ * 5. Retornar ActaResponse con el nombre del ZIP.
+ *
+ * A diferencia de ActaService, solo genera un DOCX (no checklist).
+ * Naming del ZIP: Devolucion_{serial}_{motivo}.zip
+ */
 @Service
 public class DevolucionService {
 
@@ -32,6 +45,12 @@ public class DevolucionService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Genera el acta de devolución empaquetada en ZIP.
+     *
+     * @param request Datos del acta validados previamente por el controller.
+     * @return ActaResponse con success=true y nombre_zip, o success=false con error.
+     */
     public ActaResponse generarDevolucion(DevolucionRequest request) {
         try {
             Path outputDir = Paths.get(generatedDir);
@@ -43,7 +62,6 @@ public class DevolucionService {
             );
 
             Path rutaDevolucion = wordService.generarDevolucion(datos);
-            System.out.println("DEVOLUCION DOCX: " + rutaDevolucion);
 
             String serial = "SinSerial";
             if (request.getEquipos() != null && !request.getEquipos().isEmpty()) {
@@ -57,13 +75,10 @@ public class DevolucionService {
             Path rutaZip = outputDir.resolve(nombreZip);
 
             zipService.crearZip(rutaZip, rutaDevolucion);
-            System.out.println("ZIP DEVOLUCION CREADO: " + rutaZip);
 
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            System.out.println("ERROR DEVOLUCION: " + e.getMessage());
-            e.printStackTrace();
             return ActaResponse.error("Error generando devolucion: " + e.getMessage());
         }
     }

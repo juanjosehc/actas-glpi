@@ -8,6 +8,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controlador para la generación del acta de devolución.
+ *
+ * Endpoint:
+ * - POST /generar-devolucion → Genera acta de devolución, retorna nombre del ZIP.
+ *
+ * A diferencia de ActaController, no tiene endpoint de descarga
+ * porque reutiliza el mismo endpoint /descargar-acta/{zip}.
+ * La generación delega completamente a DevolucionService.
+ */
 @RestController
 public class DevolucionController {
 
@@ -17,16 +27,14 @@ public class DevolucionController {
         this.devolucionService = devolucionService;
     }
 
+    /**
+     * Genera el acta de devolución.
+     *
+     * @param request Datos del acta validados con @Valid.
+     * @return ActaResponse con success y nombre_zip, o error.
+     */
     @PostMapping("/generar-devolucion")
     public ActaResponse generarDevolucion(@Valid @RequestBody DevolucionRequest request) {
-        System.out.println("========== DEVOLUCION RECIBIDA ==========");
-        System.out.println(request);
-
-        ActaResponse response = devolucionService.generarDevolucion(request);
-
-        System.out.println("=== RESULTADO DEVOLUCION ===");
-        System.out.println(response);
-
-        return response;
+        return devolucionService.generarDevolucion(request);
     }
 }

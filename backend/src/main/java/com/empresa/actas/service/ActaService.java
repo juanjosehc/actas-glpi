@@ -12,6 +12,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+/**
+ * Servicio orquestador para la generación del acta de entrega.
+ *
+ * Flujo:
+ * 1. Crear directorio de salida si no existe.
+ * 2. Convertir ActaRequest a Map<String, Object> para el motor de templates.
+ * 3. Generar acta de entrega (DOCX) vía DocumentoWordService.
+ * 4. Generar lista de chequeo (DOCX) vía DocumentoWordService.
+ * 5. Empaquetar ambos DOCX en un ZIP vía ZipService.
+ * 6. Retornar ActaResponse con el nombre del ZIP.
+ *
+ * Naming del ZIP: ActaLista_{serial}_{asunto}.zip
+ */
 @Service
 public class ActaService {
 
@@ -32,6 +45,12 @@ public class ActaService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Genera el acta de entrega completa (acta + checklist) empaquetada en ZIP.
+     *
+     * @param request Datos del acta validados previamente por el controller.
+     * @return ActaResponse con success=true y nombre_zip, o success=false con error.
+     */
     public ActaResponse generarActa(ActaRequest request) {
         try {
             Path outputDir = Paths.get(generatedDir);
@@ -43,10 +62,8 @@ public class ActaService {
             );
 
             Path rutaActa = wordService.generarActa(datos);
-            System.out.println("ACTA DOCX: " + rutaActa);
 
             Path rutaChecklist = wordService.generarChecklist(datos);
-            System.out.println("CHECKLIST DOCX: " + rutaChecklist);
 
             String asunto = request.getAsunto()
                     .replaceAll("[^a-zA-Z0-9]", "");
@@ -60,13 +77,10 @@ public class ActaService {
             Path rutaZip = outputDir.resolve(nombreZip);
 
             zipService.crearZip(rutaZip, rutaActa, rutaChecklist);
-            System.out.println("ZIP CREADO: " + rutaZip);
 
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
-            e.printStackTrace();
             return ActaResponse.error("Error generando documentacion: " + e.getMessage());
         }
     }

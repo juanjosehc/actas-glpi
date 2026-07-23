@@ -8,6 +8,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DTO de entrada para la generación del acta de entrega.
+ *
+ * Contiene toda la información necesaria para generar:
+ * - Acta de entrega (DOCX)
+ * - Lista de chequeo (DOCX)
+ *
+ * Campos obligatorios validados con @NotBlank:
+ * - fecha, entregado_a, cargo_recibe, entregado_por,
+ *   cargo_entrega, asunto, numero_sac, sistema_operativo.
+ *
+ * Campos opcionales con valores por defecto:
+ * - hardware, equipos, checklist, observaciones.
+ */
 @Data
 public class ActaRequest {
 

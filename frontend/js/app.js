@@ -1,31 +1,48 @@
-async function buscarEquipo() {
+/*
+====================================================
+ACTA DE ENTREGA - FRONTEND
+====================================================
 
-    const serial =
-        document.getElementById("serial").value;
+Responsabilidades:
 
-    const response =
-        await fetch(
-            `http://127.0.0.1:8001/equipo/${serial}`
-        );
+- Gestión de datos del acta de entrega.
+- Administración dinámica de equipos (agregar/eliminar/buscar).
+- Administración dinámica de hardware (agregar/eliminar).
+- Validaciones de formulario y equipos.
+- Construcción del payload para el backend.
+- Descarga automática del ZIP generado.
 
-    const data =
-        await response.json();
+Endpoints utilizados:
 
-        document.getElementById("marca").value =
-            data.marca ?? "";
+- GET  /equipo/{serial}          → Consulta equipo en GLPI por serial.
+- POST /generar-acta             → Genera acta + checklist (DOCX).
+- GET  /descargar-acta/{archivo} → Descarga el ZIP generado.
 
-        document.getElementById("tipo").value =
-            data.tipo ?? "";
+Flujo principal:
 
-        document.getElementById("modelo").value =
-            data.modelo ?? "";
+1. Usuario completa campos obligatorios y opciones.
+2. Click en "Generar Acta" ejecuta generarActa().
+3. Se validan campos, sistema operativo y equipos.
+4. Se construye el payload con todos los datos.
+5. Se envía POST al backend.
+6. Se recibe nombre del ZIP y se descarga automáticamente.
 
-        document.getElementById("serial_acta").value =
-            document.getElementById("serial").value;
-}
+====================================================
+*/
 
+/**
+ * Genera el acta de entrega y la lista de chequeo.
+ *
+ * Flujo:
+ * 1. Validar campos obligatorios (fecha, entregado_a, etc.).
+ * 2. Validar que se haya seleccionado un sistema operativo.
+ * 3. Validar que cada equipo tenga serial e inventario.
+ * 4. Construir objetos de hardware, equipos y checklist.
+ * 5. Armar el payload completo.
+ * 6. Enviar POST a /generar-acta.
+ * 7. Descargar el ZIP resultante vía /descargar-acta.
+ */
 async function generarActa() {
-    console.log("ENTRO A GENERAR ACTA");
 
     try {
 
@@ -100,15 +117,6 @@ async function generarActa() {
                 });
 
         }
-
-            if (!primerCampoInvalido) {
-
-                primerCampoInvalido =
-                    document.getElementById(
-                        "so-win10"
-                    );
-
-            }
 
         const errorEquipo =
             validarEquipos();
@@ -297,8 +305,6 @@ async function generarActa() {
 
         };        
 
-        console.log("ANTES DEL FETCH");
-
         const response = await fetch(
             "http://127.0.0.1:8001/generar-acta",
             {
@@ -309,8 +315,6 @@ async function generarActa() {
                 body: JSON.stringify(payload)
             }
         );
-
-        console.log("DESPUES DEL FETCH");
 
         if (!response.ok) {
 
@@ -327,8 +331,6 @@ async function generarActa() {
         const result =
             await response.json();
 
-        console.log("RESULTADO:", result);
-
         if (!result.success) {
 
             throw new Error(
@@ -343,14 +345,10 @@ async function generarActa() {
             "success"
         );
 
-        console.log("INICIANDO DESCARGA:", result.nombre_zip);
-
         const descargaResponse = await fetch(
             "http://127.0.0.1:8001/descargar-acta/" +
             result.nombre_zip
         );
-
-        console.log("RESPUESTA DESCARGA:", descargaResponse.status);
 
         if (!descargaResponse.ok) {
             throw new Error("Error descargando el archivo");
@@ -385,9 +383,6 @@ async function generarActa() {
 
     catch (error) {
 
-        console.error("ERROR COMPLETO:", error);
-        console.error("MENSAJE:", error.message);
-
         mostrarMensaje(
             "Error generando la documentación: " + error.message,
             "error"
@@ -398,74 +393,139 @@ async function generarActa() {
 }
 
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+/*
+----------------------------------------------------
+INICIALIZACIÓN
+----------------------------------------------------
+*/
 
-        const btnHardware =
-            document.getElementById(
-                "btn-add-hardware"
-            );
+/**
+ * Inicializa la página al cargar el DOM.
+ *
+ * Acciones:
+ * - Vincula botones de agregar hardware y equipo.
+ * - Crea un equipo y un hardware vacíos por defecto.
+ * - Vincula botones de marcar/desmarcar todo (checklist).
+ * - Sincroniza "entregado_por" con "responsable_verificacion".
+ * - Limpia errores de validación al escribir en cualquier campo.
+ * - Limpia errores de selección de sistema operativo.
+ * - Inicializa el datepicker en el campo de fecha.
+ */
+document.addEventListener("DOMContentLoaded", () => {
 
-        if (btnHardware) {
+    const btnHardware =
+        document.getElementById("btn-add-hardware");
 
-            btnHardware.addEventListener(
-                "click",
-                agregarHardware
-            );
+    if (btnHardware) {
+        btnHardware.addEventListener("click", agregarHardware);
+    }
 
-        }
+    const btnEquipo =
+        document.getElementById("btn-add-equipo");
 
-        const btnEquipo =
-            document.getElementById(
-                "btn-add-equipo"
-            );
+    if (btnEquipo) {
+        btnEquipo.addEventListener("click", agregarEquipo);
+    }
 
-        if (btnEquipo) {
+    agregarEquipo();
+    agregarHardware();
 
-            btnEquipo.addEventListener(
-                "click",
-                agregarEquipo
-            );
+    document
+        .getElementById("btn-marcar-todo")
+        ?.addEventListener("click", marcarTodosLosChecks);
 
-        }
+    document
+        .getElementById("btn-desmarcar-todo")
+        ?.addEventListener("click", desmarcarTodosLosChecks);
 
-        agregarEquipo();
+    const entregadoPor =
+        document.getElementById("entregado_por");
 
-        agregarHardware();
+    const responsable =
+        document.getElementById("responsable_verificacion");
 
-        document
-            .getElementById(
-                "btn-marcar-todo"
-            )
-            ?.addEventListener(
-                "click",
-                marcarTodosLosChecks
-            );
+    if (entregadoPor && responsable) {
 
-        document
-            .getElementById(
-                "btn-desmarcar-todo"
-            )
-            ?.addEventListener(
-                "click",
-                desmarcarTodosLosChecks
-            );
+        entregadoPor.addEventListener("input", () => {
+            responsable.value = entregadoPor.value;
+        });
 
     }
-);
 
+    document
+        .querySelectorAll(".input, .textarea")
+        .forEach(campo => {
+
+            campo.addEventListener("input", () => {
+
+                if (campo.value.trim()) {
+
+                    campo.classList.remove("is-invalid");
+
+                    const helper =
+                        campo.parentElement.querySelector(
+                            ".helper-text"
+                        );
+
+                    if (helper) {
+                        helper.style.display = "none";
+                    }
+                }
+
+            });
+
+        });
+
+    document
+        .querySelectorAll('input[name="so"]')
+        .forEach(radio => {
+
+            radio.addEventListener("change", () => {
+
+                document
+                    .getElementById("so-container")
+                    ?.classList.remove("is-invalid");
+
+                document
+                    .querySelectorAll('input[name="so"]')
+                    .forEach(item => {
+
+                        item.classList.remove("radio-so-error");
+
+                    });
+
+            });
+
+        });
+
+    flatpickr("#fecha", {
+        dateFormat: "Y-m-d",
+        monthSelectorType: "static",
+        allowInput: true
+    });
+
+});
+
+/*
+----------------------------------------------------
+ADMINISTRACIÓN DINÁMICA DE HARDWARE
+----------------------------------------------------
+*/
+
+/**
+ * Agrega un nuevo registro de hardware al formulario.
+ *
+ * Cada registro contiene: tipo, descripción y programa.
+ * Límite máximo: 11 registros. No se permite eliminar
+ * el último registro existente.
+ */
 function agregarHardware() {
 
     const container =
-        document.getElementById(
-            "hardware-container"
-        );
+        document.getElementById("hardware-container");
 
     if (
-        container.querySelectorAll(
-            ".hardware-item"
-        ).length >= 11
+        container.querySelectorAll(".hardware-item").length >= 11
     ) {
 
         mostrarMensaje(
@@ -477,17 +537,12 @@ function agregarHardware() {
     }
 
     const numeroHardware =
-        container.querySelectorAll(
-            ".hardware-item"
-        ).length + 1;
+        container.querySelectorAll(".hardware-item").length + 1;
 
     const fila =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    fila.className =
-        "hardware-item";
+    fila.className = "hardware-item";
 
     fila.innerHTML = `
 
@@ -567,62 +622,61 @@ function agregarHardware() {
     `;
 
     fila
-        .querySelector(
-            "[data-eliminar]"
-        )
-        .addEventListener(
-            "click",
-            () => {
+        .querySelector("[data-eliminar]")
+        .addEventListener("click", () => {
 
-                if (
-                    document.querySelectorAll(
-                        ".hardware-item"
-                    ).length === 1
-                ) {
+            if (
+                document.querySelectorAll(".hardware-item").length === 1
+            ) {
 
-                    mostrarMensaje(
-                        "Debe existir al menos un hardware",
-                        "error"
-                    );
+                mostrarMensaje(
+                    "Debe existir al menos un hardware",
+                    "error"
+                );
 
-                    return;
-
-                }
-
-                fila.remove();
-
-                renumerarHardware();
+                return;
 
             }
-        );
 
-    container.appendChild(
-        fila
-    );
+            fila.remove();
+
+            renumerarHardware();
+
+        });
+
+    container.appendChild(fila);
 
     renumerarHardware();
 
 }
 
+/*
+----------------------------------------------------
+ADMINISTRACIÓN DINÁMICA DE EQUIPOS
+----------------------------------------------------
+*/
+
+/**
+ * Agrega un nuevo bloque de equipo al formulario.
+ *
+ * Cada bloque contiene: serial, botón buscar, marca,
+ * tipo, modelo e inventario. Marca/tipo/modelo se
+ * autocompletan desde GLPI al hacer click en "Buscar".
+ * Se validan serial, inventario y estado antes de enviar.
+ * Límite mínimo: 1 equipo (no se puede eliminar el último).
+ */
 function agregarEquipo() {
 
     const container =
-        document.getElementById(
-            "equipos-container"
-        );
+        document.getElementById("equipos-container");
 
     const numeroEquipo =
-        container.querySelectorAll(
-            ".equipo-item"
-        ).length + 1;
+        container.querySelectorAll(".equipo-item").length + 1;
 
     const equipo =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    equipo.className =
-        "equipo-item";
+    equipo.className = "equipo-item";
 
     equipo.innerHTML = `
 
@@ -732,110 +786,98 @@ function agregarEquipo() {
 
     `;
 
-    container.appendChild(
-        equipo
-    );
+    container.appendChild(equipo);
 
     equipo
         .querySelectorAll(".input")
         .forEach(campo => {
 
-            campo.addEventListener(
-                "input",
-                () => {
+            campo.addEventListener("input", () => {
 
-                    if (campo.value.trim()) {
+                if (campo.value.trim()) {
 
-                        campo.classList.remove(
-                            "is-invalid"
-                        );
-
-                    }
+                    campo.classList.remove("is-invalid");
 
                 }
-            );
+
+            });
 
         });
 
     renumerarEquipos();
 
     equipo
-        .querySelector(
-            "[data-buscar]"
-        )
-        .addEventListener(
-            "click",
-            () => buscarEquipoBloque(
-                equipo
-            )
-        );
+        .querySelector("[data-buscar]")
+        .addEventListener("click", () => buscarEquipoBloque(equipo));
 
     equipo
-        .querySelector(
-            "[data-eliminar]"
-        )
-        .addEventListener(
-            "click",
-            () => {
+        .querySelector("[data-eliminar]")
+        .addEventListener("click", () => {
 
-                if (
-                    document.querySelectorAll(
-                        ".equipo-item"
-                    ).length === 1
-                ) {
+            if (
+                document.querySelectorAll(".equipo-item").length === 1
+            ) {
 
-                    mostrarMensaje(
-                        "Debe existir al menos un equipo",
-                        "error"
-                    );
+                mostrarMensaje(
+                    "Debe existir al menos un equipo",
+                    "error"
+                );
 
-                    return;
-
-                }
-
-                equipo.remove();
-
-                renumerarEquipos();
+                return;
 
             }
-        );
+
+            equipo.remove();
+
+            renumerarEquipos();
+
+        });
 
 }
 
-async function buscarEquipoBloque(
-    bloque
-) {
+/**
+ * Consulta GLPI por serial y auto completa marca, tipo y modelo.
+ *
+ * Endpoint: GET /equipo/{serial}
+ * Los campos se actualizan dentro del bloque del equipo
+ * al que pertenece el botón "Buscar".
+ *
+ * @param {HTMLElement} bloque - Elemento .equipo-item que contiene los campos.
+ */
+async function buscarEquipoBloque(bloque) {
 
     const serial =
-        bloque.querySelector(
-            "[data-serial]"
-        ).value;
+        bloque.querySelector("[data-serial]").value;
 
     const response =
-        await fetch(
-            `http://127.0.0.1:8001/equipo/${serial}`
-        );
+        await fetch(`http://127.0.0.1:8001/equipo/${serial}`);
 
     const data =
         await response.json();
 
-    bloque.querySelector(
-        "[data-marca]"
-    ).value =
+    bloque.querySelector("[data-marca]").value =
         data.marca ?? "";
 
-    bloque.querySelector(
-        "[data-tipo]"
-    ).value =
+    bloque.querySelector("[data-tipo]").value =
         data.tipo ?? "";
 
-    bloque.querySelector(
-        "[data-modelo]"
-    ).value =
+    bloque.querySelector("[data-modelo]").value =
         data.modelo ?? "";
 
 }
 
+/*
+----------------------------------------------------
+UTILIDADES DE RENUMERACIÓN
+----------------------------------------------------
+*/
+
+/**
+ * Actualiza los títulos "Equipo N" después de agregar o eliminar.
+ *
+ * Recorre todos los .equipo-item y asigna el número
+ * secuencial basado en su posición actual en el DOM.
+ */
 function renumerarEquipos() {
 
     document
@@ -849,6 +891,12 @@ function renumerarEquipos() {
 
 }
 
+/**
+ * Actualiza los títulos "Hardware N" después de agregar o eliminar.
+ *
+ * Mismo comportamiento que renumerarEquipos pero para
+ * los bloques de hardware.
+ */
 function renumerarHardware() {
 
     document
@@ -862,59 +910,28 @@ function renumerarHardware() {
 
 }
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+/*
+----------------------------------------------------
+VALIDACIONES
+----------------------------------------------------
+*/
 
-        const entregadoPor =
-            document.getElementById(
-                "entregado_por"
-            );
-
-        const responsable =
-            document.getElementById(
-                "responsable_verificacion"
-            );
-
-        if (
-            entregadoPor &&
-            responsable
-        ) {
-
-            entregadoPor.addEventListener(
-                "input",
-                () => {
-
-                    responsable.value =
-                        entregadoPor.value;
-
-                }
-            );
-
-        }
-
-    }
-);
-
-window.addEventListener("load", () => {
-
-    flatpickr("#fecha", {
-        dateFormat: "Y-m-d",
-        monthSelectorType: "static",
-        allowInput: true
-    });
-
-});
-
+/**
+ * Valida un campo obligatorio por su ID.
+ *
+ * Aplica la clase "is-invalid" y muestra el helper-text
+ * si el campo está vacío. Remueve ambos si tiene valor.
+ *
+ * @param {string} id - ID del elemento input a validar.
+ * @returns {boolean} true si el campo tiene valor, false si está vacío.
+ */
 function validarCampo(id) {
 
     const campo =
         document.getElementById(id);
 
     const helper =
-        campo.parentElement.querySelector(
-            ".helper-text"
-        );
+        campo.parentElement.querySelector(".helper-text");
 
     const vacio =
         !campo.value.trim();
@@ -939,6 +956,15 @@ function validarCampo(id) {
     return true;
 }
 
+/**
+ * Valida los equipos agregados dinámicamente.
+ *
+ * Recorre todos los .equipo-item y verifica que cada uno
+ * tenga serial, inventario y estado. Retorna el primer
+ * error encontrado para permitir scroll automático y foco.
+ *
+ * @returns {Object|null} Primer error: { elemento, nombre } o null si todo es válido.
+ */
 function validarEquipos() {
 
     let primerError = null;
@@ -965,9 +991,7 @@ function validarEquipos() {
 
                 if (vacio) {
 
-                    campo.elemento.classList.add(
-                        "is-invalid"
-                    );
+                    campo.elemento.classList.add("is-invalid");
 
                     if (!primerError) {
 
@@ -980,9 +1004,7 @@ function validarEquipos() {
 
                 } else {
 
-                    campo.elemento.classList.remove(
-                        "is-invalid"
-                    );
+                    campo.elemento.classList.remove("is-invalid");
 
                 }
 
@@ -993,84 +1015,16 @@ function validarEquipos() {
     return primerError;
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+/*
+----------------------------------------------------
+CHECKLIST - ACCORDIONS
+----------------------------------------------------
+*/
 
-    document
-        .querySelectorAll(".input, .textarea")
-        .forEach(campo => {
-
-            campo.addEventListener("input", () => {
-
-                if (campo.value.trim()) {
-
-                    campo.classList.remove("is-invalid");
-
-                    const helper =
-                        campo.parentElement.querySelector(
-                            ".helper-text"
-                        );
-
-                    if (helper) {
-                        helper.style.display = "none";
-                    }
-                }
-
-            });
-
-        });
-    
-    document
-        .querySelectorAll(
-            'input[name="so"]'
-        )
-        .forEach(radio => {
-
-            radio.addEventListener(
-                "change",
-                () => {
-
-                    document
-                        .getElementById(
-                            "so-container"
-                        )
-                        ?.classList.remove(
-                            "is-invalid"
-                        );
-
-                }
-            );
-
-        });
-
-        document
-        .querySelectorAll(
-            'input[name="so"]'
-        )
-        .forEach(radio => {
-
-            radio.addEventListener(
-                "change",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            'input[name="so"]'
-                        )
-                        .forEach(item => {
-
-                            item.classList.remove(
-                                "radio-so-error"
-                            );
-
-                        });
-
-                }
-            );
-
-        });
-
-});
-
+/**
+ * Abre todos los acordeones del checklist.
+ * Utilizado al marcar todos los checkboxes.
+ */
 function abrirTodosLosAccordions() {
 
     document
@@ -1083,12 +1037,31 @@ function abrirTodosLosAccordions() {
 
 }
 
+/**
+ * Cierra todos los acordeones del checklist.
+ * Utilizado al desmarcar todos los checkboxes.
+ */
+function cerrarTodosLosAccordions() {
+
+    document
+        .querySelectorAll(".check-section")
+        .forEach(section => {
+
+            section.open = false;
+
+        });
+
+}
+
+/**
+ * Marca todos los checkboxes del checklist (chk_1 a chk_36).
+ * También abre todos los acordeones para que el usuario
+ * vea las opciones marcadas.
+ */
 function marcarTodosLosChecks() {
 
     document
-        .querySelectorAll(
-            'input[type="checkbox"][id^="chk_"]'
-        )
+        .querySelectorAll('input[type="checkbox"][id^="chk_"]')
         .forEach(check => {
 
             check.checked = true;
@@ -1099,12 +1072,14 @@ function marcarTodosLosChecks() {
 
 }
 
+/**
+ * Desmarca todos los checkboxes del checklist (chk_1 a chk_36).
+ * También cierra todos los acordeones.
+ */
 function desmarcarTodosLosChecks() {
 
     document
-        .querySelectorAll(
-            'input[type="checkbox"][id^="chk_"]'
-        )
+        .querySelectorAll('input[type="checkbox"][id^="chk_"]')
         .forEach(check => {
 
             check.checked = false;

@@ -15,6 +15,22 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Servicio de integración con la API de GLPI para consultar equipos.
+ *
+ * Flujo de búsqueda:
+ * 1. Iniciar sesión en GLPI con App-Token y User-Token.
+ * 2. Construir query de búsqueda con el serial del equipo.
+ * 3. Extraer marca (field 23), tipo (field 4), modelo (field 40) y procesador (field 17).
+ * 4. Abreviar el nombre del procesador (ej: "Core(TM) i5-12400" → "Core i5").
+ * 5. Concatenar modelo + sufijo CPU para el acta.
+ *
+ * Campos GLPI:
+ * - Field 23: Fabricante (marca).
+ * - Field 4:  Tipo de equipo.
+ * - Field 40: Modelo.
+ * - Field 17: Procesador.
+ */
 @Service
 public class EquipoService {
 
@@ -30,6 +46,12 @@ public class EquipoService {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Busca un equipo en GLPI por su número de serial.
+     *
+     * @param serial Número de serial a buscar.
+     * @return EquipoResponse con marca, tipo y modelo. Vacío si no se encuentra.
+     */
     public EquipoResponse buscarEquipo(String serial) {
         try {
             String sessionToken = iniciarSesion();
@@ -91,11 +113,16 @@ public class EquipoService {
             return new EquipoResponse(marca, tipo, modeloActa);
 
         } catch (Exception e) {
-            System.out.println("Error consultando GLPI: " + e.getMessage());
             return new EquipoResponse("", "", "");
         }
     }
 
+    /**
+     * Inicia sesión en la API de GLPI y retorna el session token.
+     *
+     * @return Session token para las siguientes peticiones.
+     * @throws Exception Si hay error de conexión o autenticación.
+     */
     private String iniciarSesion() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(glpiUrl + "/initSession"))
@@ -113,6 +140,17 @@ public class EquipoService {
         return root.path("session_token").asText();
     }
 
+    /**
+     * Abrevia el nombre completo del procesador a un sufijo corto.
+     *
+     * Ejemplos:
+     * - "Intel(R) Core(TM) i5-12400" → "Core i5"
+     * - "AMD Ryzen 5 5600X"          → "Ryzen 5"
+     * - "12th Gen Intel(R) Core(TM) i7-12700K" → "Core i7"
+     *
+     * @param cpu Nombre completo del procesador desde GLPI.
+     * @return Sufijo abreviado, o cadena vacía si no se reconoce.
+     */
     private String cpuCorto(String cpu) {
         if (cpu == null || cpu.isEmpty()) {
             return "";
@@ -147,6 +185,16 @@ public class EquipoService {
         return "";
     }
 
+    /**
+     * Extrae el valor de un campo específico de un nodo JSON de GLPI.
+     *
+     * GLPI retorna arrays para campos con múltiples valores.
+     * Si es array, se concatena con espacio. Si es string, se retorna directamente.
+     *
+     * @param node    Nodo JSON del equipo.
+     * @param fieldId ID del campo GLPI (como string).
+     * @return Valor del campo, o cadena vacía si no existe.
+     */
     private String getFieldValue(JsonNode node, String fieldId) {
         JsonNode valueNode = node.path(fieldId);
         if (valueNode.isMissingNode() || valueNode.isNull()) {
