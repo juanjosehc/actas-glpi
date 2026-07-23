@@ -26,8 +26,75 @@ async function buscarEquipo() {
 
 async function generarActa() {
     console.log("ENTRO A GENERAR ACTA");
-    
+
     try {
+
+        const camposObligatorios = [
+
+            "fecha",
+            "entregado_a",
+            "cargo_recibe",
+            "entregado_por",
+            "cargo_entrega",
+            "asunto",
+            "numero_sac"
+
+        ];
+
+        let primerCampoInvalido = null;
+
+        camposObligatorios.forEach(id => {
+
+            const valido = validarCampo(id);
+
+            if (!valido && !primerCampoInvalido) {
+
+                primerCampoInvalido =
+                    document.getElementById(id);
+
+            }
+
+        });
+
+        const errorEquipo = validarEquipos();
+
+        if (primerCampoInvalido) {
+
+            primerCampoInvalido.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            setTimeout(() => {
+                primerCampoInvalido.focus();
+            }, 300);
+
+            mostrarMensaje(
+                "Complete los campos obligatorios",
+                "error"
+            );
+
+            return;
+        }
+
+        if (errorEquipo) {
+
+            errorEquipo.elemento.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            setTimeout(() => {
+                errorEquipo.elemento.focus();
+            }, 300);
+
+            mostrarMensaje(
+                `Debe completar: ${errorEquipo.nombre}`,
+                "error"
+            );
+
+            return;
+        }
 
         const hardware = [];
         const checklist = {};
@@ -585,6 +652,27 @@ function agregarEquipo() {
         equipo
     );
 
+    equipo
+        .querySelectorAll(".input")
+        .forEach(campo => {
+
+            campo.addEventListener(
+                "input",
+                () => {
+
+                    if (campo.value.trim()) {
+
+                        campo.classList.remove(
+                            "is-invalid"
+                        );
+
+                    }
+
+                }
+            );
+
+        });
+
     renumerarEquipos();
 
     equipo
@@ -734,5 +822,117 @@ window.addEventListener("load", () => {
 
 });
 
+function validarCampo(id) {
 
+    const campo =
+        document.getElementById(id);
 
+    const helper =
+        campo.parentElement.querySelector(
+            ".helper-text"
+        );
+
+    const vacio =
+        !campo.value.trim();
+
+    if (vacio) {
+
+        campo.classList.add("is-invalid");
+
+        if (helper) {
+            helper.style.display = "block";
+        }
+
+        return false;
+    }
+
+    campo.classList.remove("is-invalid");
+
+    if (helper) {
+        helper.style.display = "none";
+    }
+
+    return true;
+}
+
+function validarEquipos() {
+
+    let primerError = null;
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            const campos = [
+                {
+                    elemento: equipo.querySelector("[data-serial]"),
+                    nombre: `Serial del Equipo ${index + 1}`
+                },
+                {
+                    elemento: equipo.querySelector("[data-inventario]"),
+                    nombre: `Inventario del Equipo ${index + 1}`
+                }
+            ];
+
+            campos.forEach(campo => {
+
+                const vacio =
+                    !campo.elemento?.value?.trim();
+
+                if (vacio) {
+
+                    campo.elemento.classList.add(
+                        "is-invalid"
+                    );
+
+                    if (!primerError) {
+
+                        primerError = {
+                            elemento: campo.elemento,
+                            nombre: campo.nombre
+                        };
+
+                    }
+
+                } else {
+
+                    campo.elemento.classList.remove(
+                        "is-invalid"
+                    );
+
+                }
+
+            });
+
+        });
+
+    return primerError;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    document
+        .querySelectorAll(".input, .textarea")
+        .forEach(campo => {
+
+            campo.addEventListener("input", () => {
+
+                if (campo.value.trim()) {
+
+                    campo.classList.remove("is-invalid");
+
+                    const helper =
+                        campo.parentElement.querySelector(
+                            ".helper-text"
+                        );
+
+                    if (helper) {
+                        helper.style.display = "none";
+                    }
+                }
+
+            });
+
+        });
+
+});
