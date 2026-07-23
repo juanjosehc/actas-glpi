@@ -677,7 +677,7 @@ function agregarEquipo() {
                     class="input"
                     placeholder=" "
                     data-marca
-                    readonly />
+                    disabled />
 
                 <label class="input-floating-label">
                     Marca
@@ -691,7 +691,7 @@ function agregarEquipo() {
                     class="input"
                     placeholder=" "
                     data-tipo
-                    readonly />
+                    disabled />
 
                 <label class="input-floating-label">
                     Tipo
@@ -705,7 +705,7 @@ function agregarEquipo() {
                     class="input"
                     placeholder=" "
                     data-modelo
-                    readonly />
+                    disabled />
 
                 <label class="input-floating-label">
                     Modelo
@@ -1043,31 +1043,31 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         document
-            .querySelectorAll(
-                'input[name="so"]'
-            )
-            .forEach(radio => {
+        .querySelectorAll(
+            'input[name="so"]'
+        )
+        .forEach(radio => {
 
-                radio.addEventListener(
-                    "change",
-                    () => {
+            radio.addEventListener(
+                "change",
+                () => {
 
-                        document
-                            .querySelectorAll(
-                                'input[name="so"]'
-                            )
-                            .forEach(item => {
+                    document
+                        .querySelectorAll(
+                            'input[name="so"]'
+                        )
+                        .forEach(item => {
 
-                                item.classList.remove(
-                                    "radio-so-error"
-                                );
+                            item.classList.remove(
+                                "radio-so-error"
+                            );
 
-                            });
+                        });
 
-                    }
-                );
+                }
+            );
 
-            });
+        });
 
 });
 
