@@ -166,15 +166,17 @@ flowchart LR
 
     subgraph Equipos
         B1[Serial]
-        B2[Buscar → GLPI auto-completa]
+        B2[Buscar GLPI]
         B3[Inventario]
-        B4[Estado]  ← Diferencia con entrega
+        B4[Estado]
     end
 
     subgraph Otros Elementos
-        C1[Tipo]  ← Solo tipo, sin descripción
+        C1[Tipo]
     end
 ```
+
+> **Nota:** El campo **Estado** existe únicamente en el flujo de devolución. El bloque **Otros Elementos** solo solicita el tipo de elemento y no incluye descripción.
 
 **Campos obligatorios:** Fecha, Nombre quien entrega, Cédula, Cargo quien entrega, Recibido por, Cargo quien recibe, Área quien recibe, Motivo, Nombre jefe, Cargo jefe.
 
