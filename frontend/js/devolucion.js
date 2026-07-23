@@ -697,7 +697,7 @@ document.addEventListener(
 window.addEventListener("load", () => {
 
     flatpickr("#fecha", {
-        dateFormat: "d-m-Y",
+        dateFormat: "Y-m-d",
         monthSelectorType: "static",
         allowInput: true
     });
