@@ -1,708 +1,920 @@
-async function buscarEquipo() {
+    async function buscarEquipo() {
 
-    const serial =
-        document.getElementById("serial").value;
-
-    const response =
-        await fetch(
-            `http://127.0.0.1:8001/equipo/${serial}`
-        );
-
-    const data =
-        await response.json();
-
-        document.getElementById("marca").value =
-            data.marca ?? "";
-
-        document.getElementById("tipo").value =
-            data.tipo ?? "";
-
-        document.getElementById("modelo").value =
-            data.modelo ?? "";
-
-        document.getElementById("serial_acta").value =
+        const serial =
             document.getElementById("serial").value;
-}
 
-async function generarDevolucion() {
-    console.log("ENTRO A GENERAR ACTA");
-    
-    try {
+        const response =
+            await fetch(
+                `http://127.0.0.1:8001/equipo/${serial}`
+            );
 
-        const hardware = [];
-        const checklist = {};
+        const data =
+            await response.json();
 
-        for (let i = 1; i <= 36; i++) {
+            document.getElementById("marca").value =
+                data.marca ?? "";
 
-            checklist[`chk_${i}`] =
-                document.getElementById(
-                    `chk_${i}`
-                )?.checked ?? false;
+            document.getElementById("tipo").value =
+                data.tipo ?? "";
+
+            document.getElementById("modelo").value =
+                data.modelo ?? "";
+
+            document.getElementById("serial_acta").value =
+                document.getElementById("serial").value;
+    }
+
+    async function generarDevolucion() {
+        console.log("ENTRO A GENERAR ACTA");
+        
+        try {
+
+            const camposObligatorios = [
+
+                "fecha",
+                "entregado_por",
+                "cedula",
+                "cargo_entrega",
+                "recibido_por",
+                "cargo_recibe",
+                "area_recibe",
+                "motivo",
+                "nombre_jefe",
+                "cargo_jefe"
+
+            ];
+
+            let primerCampoInvalido = null;
+
+            camposObligatorios.forEach(id => {
+
+                const valido = validarCampo(id);
+
+                if (!valido && !primerCampoInvalido) {
+
+                    primerCampoInvalido =
+                        document.getElementById(id);
+
+                }
+
+            });
+
+            const errorEquipo = validarEquipos();
+
+            if (primerCampoInvalido) {
+
+                primerCampoInvalido.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                setTimeout(() => {
+                    primerCampoInvalido.focus();
+                }, 300);
+
+                mostrarMensaje(
+                    "Complete los campos obligatorios",
+                    "error"
+                );
+
+                return;
+            }
+
+            if (errorEquipo) {
+
+                errorEquipo.elemento.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                setTimeout(() => {
+                    errorEquipo.elemento.focus();
+                }, 300);
+
+                mostrarMensaje(
+                    `Debe completar: ${errorEquipo.nombre}`,
+                    "error"
+                );
+
+                return;
+            }
+
+            const hardware = [];
+            const checklist = {};
+
+            for (let i = 1; i <= 36; i++) {
+
+                checklist[`chk_${i}`] =
+                    document.getElementById(
+                        `chk_${i}`
+                    )?.checked ?? false;
+
+            }
+
+            document
+                .querySelectorAll(".hardware-item")
+                .forEach(item => {
+
+                    hardware.push({
+
+                        tipo:
+                            item.querySelector(
+                                "[data-tipo]"
+                            ).value,
+                    });
+
+                });
+
+            const equipos = [];
+
+            document
+                .querySelectorAll(".equipo-item")
+                .forEach(item => {
+
+                    equipos.push({
+
+                        serial:
+                            item.querySelector(
+                                "[data-serial]"
+                            ).value,
+
+                        marca:
+                            item.querySelector(
+                                "[data-marca]"
+                            ).value,
+
+                        tipo:
+                            item.querySelector(
+                                "[data-tipo]"
+                            ).value,
+
+                        modelo:
+                            item.querySelector(
+                                "[data-modelo]"
+                            ).value,
+
+                        inventario:
+                            item.querySelector(
+                                "[data-inventario]"
+                            ).value,
+
+                        estado:
+                            item.querySelector(
+                                "[data-estado]"
+                            ).value
+
+                    });
+
+                });
+
+            if (
+                !document.getElementById(
+                    "fecha"
+                ).value
+            ) {
+
+                mostrarMensaje(
+                    "Debe seleccionar una fecha",
+                    "error"
+                );
+
+                return;
+
+            }
+
+            const payload = {
+
+                fecha:
+                    document.getElementById("fecha")?.value || "",
+
+                recibido_por:
+                    document.getElementById("recibido_por")?.value || "",
+
+                entregado_por:
+                    document.getElementById("entregado_por")?.value || "",
+
+                cargo_recibe:
+                    document.getElementById("cargo_recibe")?.value || "",
+
+                cargo_entrega:
+                    document.getElementById("cargo_entrega")?.value || "",
+
+                cedula:
+                    document.getElementById("cedula")?.value || "",
+
+                area_recibe:
+                    document.getElementById("area_recibe")?.value || "",
+
+                motivo:
+                    document.getElementById("motivo")?.value || "",
+
+                nombre_jefe:
+                    document.getElementById("nombre_jefe")?.value || "",
+
+                cargo_jefe:
+                    document.getElementById("cargo_jefe")?.value || "",
+
+                hardware:
+                    hardware,
+
+                equipos:
+                    equipos,
+
+                observaciones:
+                    document.getElementById("observaciones")?.value || ""
+
+            };
+
+            console.log("ANTES DEL FETCH");
+
+            const response = await fetch(
+                "http://127.0.0.1:8001/generar-devolucion",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            console.log("DESPUES DEL FETCH");
+
+            if (!response.ok) {
+
+                const errorData =
+                    await response.json();
+
+                throw new Error(
+                    errorData.mensaje ||
+                    "No fue posible generar la documentación"
+                );
+
+            }
+
+            const result =
+                await response.json();
+
+            console.log("RESULTADO:", result);
+
+            if (!result.success) {
+
+                throw new Error(
+                    result.mensaje ||
+                    "Error generando la documentación"
+                );
+
+            }
+
+            mostrarMensaje(
+                "Documentación generada correctamente",
+                "success"
+            );
+
+            console.log("INICIANDO DESCARGA:", result.nombre_zip);
+
+            const descargaResponse = await fetch(
+                "http://127.0.0.1:8001/descargar-acta/" +
+                result.nombre_zip
+            );
+
+            console.log("RESPUESTA DESCARGA:", descargaResponse.status);
+
+            if (!descargaResponse.ok) {
+                throw new Error("Error descargando el archivo");
+            }
+
+            const blob =
+                await descargaResponse.blob();
+
+            const blobUrl =
+                URL.createObjectURL(blob);
+
+            const linkDescarga =
+                document.createElement("a");
+
+            linkDescarga.href = blobUrl;
+
+            linkDescarga.download =
+                result.nombre_zip;
+
+            document.body.appendChild(
+                linkDescarga
+            );
+
+            linkDescarga.click();
+
+            linkDescarga.remove();
+
+            URL.revokeObjectURL(blobUrl);
+
 
         }
 
-        document
-            .querySelectorAll(".hardware-item")
-            .forEach(item => {
+        catch (error) {
 
-                hardware.push({
+            console.error("ERROR COMPLETO:", error);
+            console.error("MENSAJE:", error.message);
 
-                    tipo:
-                        item.querySelector(
-                            "[data-tipo]"
-                        ).value,
-                });
+            mostrarMensaje(
+                "Error generando la documentación: " + error.message,
+                "error"
+            );
 
-            });
+        }
 
-        const equipos = [];
+    }
 
-        document
-            .querySelectorAll(".equipo-item")
-            .forEach(item => {
 
-                equipos.push({
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
 
-                    serial:
-                        item.querySelector(
-                            "[data-serial]"
-                        ).value,
+            const btnHardware =
+                document.getElementById(
+                    "btn-add-hardware"
+                );
 
-                    marca:
-                        item.querySelector(
-                            "[data-marca]"
-                        ).value,
+            if (btnHardware) {
 
-                    tipo:
-                        item.querySelector(
-                            "[data-tipo]"
-                        ).value,
+                btnHardware.addEventListener(
+                    "click",
+                    agregarHardware
+                );
 
-                    modelo:
-                        item.querySelector(
-                            "[data-modelo]"
-                        ).value,
+            }
 
-                    inventario:
-                        item.querySelector(
-                            "[data-inventario]"
-                        ).value,
+            const btnEquipo =
+                document.getElementById(
+                    "btn-add-equipo"
+                );
 
-                    estado:
-                        item.querySelector(
-                            "[data-estado]"
-                        ).value
+            if (btnEquipo) {
 
-                });
+                btnEquipo.addEventListener(
+                    "click",
+                    agregarEquipo
+                );
 
-            });
+            }
+
+            agregarEquipo();
+
+            agregarHardware();
+
+        }
+    );
+
+    function agregarHardware() {
+
+        const container =
+            document.getElementById(
+                "hardware-container"
+            );
 
         if (
-            !document.getElementById(
-                "fecha"
-            ).value
+            container.querySelectorAll(
+                ".hardware-item"
+            ).length >= 11
         ) {
 
             mostrarMensaje(
-                "Debe seleccionar una fecha",
+                "Máximo 11 registros",
                 "error"
             );
 
             return;
-
         }
 
-        const payload = {
+        const numeroHardware =
+            container.querySelectorAll(
+                ".hardware-item"
+            ).length + 1;
 
-            fecha:
-                document.getElementById("fecha")?.value || "",
-
-            recibido_por:
-                document.getElementById("recibido_por")?.value || "",
-
-            entregado_por:
-                document.getElementById("entregado_por")?.value || "",
-
-            cargo_recibe:
-                document.getElementById("cargo_recibe")?.value || "",
-
-            cargo_entrega:
-                document.getElementById("cargo_entrega")?.value || "",
-
-            cedula:
-                document.getElementById("cedula")?.value || "",
-
-            area_recibe:
-                document.getElementById("area_recibe")?.value || "",
-
-            motivo:
-                document.getElementById("motivo")?.value || "",
-
-            nombre_jefe:
-                document.getElementById("nombre_jefe")?.value || "",
-
-            cargo_jefe:
-                document.getElementById("cargo_jefe")?.value || "",
-
-            hardware:
-                hardware,
-
-            equipos:
-                equipos,
-
-            observaciones:
-                document.getElementById("observaciones")?.value || ""
-
-        };
-
-        console.log("ANTES DEL FETCH");
-
-        const response = await fetch(
-            "http://127.0.0.1:8001/generar-devolucion",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            }
-        );
-
-        console.log("DESPUES DEL FETCH");
-
-        if (!response.ok) {
-
-            const errorData =
-                await response.json();
-
-            throw new Error(
-                errorData.mensaje ||
-                "No fue posible generar la documentación"
+        const fila =
+            document.createElement(
+                "div"
             );
 
-        }
+        fila.className =
+            "hardware-item";
 
-        const result =
-            await response.json();
+        fila.innerHTML = `
 
-        console.log("RESULTADO:", result);
+            <div class="card border border-base-300 shadow-md">
 
-        if (!result.success) {
+                <div class="card-body p-2">
 
-            throw new Error(
-                result.mensaje ||
-                "Error generando la documentación"
-            );
+                    <div class="item-header">
 
-        }
+                        <h4>
+                            Hardware     ${numeroHardware}
+                        </h4>
 
-        mostrarMensaje(
-            "Documentación generada correctamente",
-            "success"
-        );
+                        <button
+                            type="button"
+                            data-eliminar
+                            class="btn btn-outline">
 
-        console.log("INICIANDO DESCARGA:", result.nombre_zip);
+                            Eliminar
 
-        const descargaResponse = await fetch(
-            "http://127.0.0.1:8001/descargar-acta/" +
-            result.nombre_zip
-        );
+                        </button>
 
-        console.log("RESPUESTA DESCARGA:", descargaResponse.status);
+                    </div>
 
-        if (!descargaResponse.ok) {
-            throw new Error("Error descargando el archivo");
-        }
-
-        const blob =
-            await descargaResponse.blob();
-
-        const blobUrl =
-            URL.createObjectURL(blob);
-
-        const linkDescarga =
-            document.createElement("a");
-
-        linkDescarga.href = blobUrl;
-
-        linkDescarga.download =
-            result.nombre_zip;
-
-        document.body.appendChild(
-            linkDescarga
-        );
-
-        linkDescarga.click();
-
-        linkDescarga.remove();
-
-        URL.revokeObjectURL(blobUrl);
-
-
-    }
-
-    catch (error) {
-
-        console.error("ERROR COMPLETO:", error);
-        console.error("MENSAJE:", error.message);
-
-        mostrarMensaje(
-            "Error generando la documentación: " + error.message,
-            "error"
-        );
-
-    }
-
-}
-
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        const btnHardware =
-            document.getElementById(
-                "btn-add-hardware"
-            );
-
-        if (btnHardware) {
-
-            btnHardware.addEventListener(
-                "click",
-                agregarHardware
-            );
-
-        }
-
-        const btnEquipo =
-            document.getElementById(
-                "btn-add-equipo"
-            );
-
-        if (btnEquipo) {
-
-            btnEquipo.addEventListener(
-                "click",
-                agregarEquipo
-            );
-
-        }
-
-        agregarEquipo();
-
-        agregarHardware();
-
-    }
-);
-
-function agregarHardware() {
-
-    const container =
-        document.getElementById(
-            "hardware-container"
-        );
-
-    if (
-        container.querySelectorAll(
-            ".hardware-item"
-        ).length >= 11
-    ) {
-
-        mostrarMensaje(
-            "Máximo 11 registros",
-            "error"
-        );
-
-        return;
-    }
-
-    const numeroHardware =
-        container.querySelectorAll(
-            ".hardware-item"
-        ).length + 1;
-
-    const fila =
-        document.createElement(
-            "div"
-        );
-
-    fila.className =
-        "hardware-item";
-
-    fila.innerHTML = `
-
-        <div class="card border border-base-300 shadow-md">
-
-            <div class="card-body p-2">
-
-                <div class="item-header">
-
-                    <h4>
-                        Hardware     ${numeroHardware}
-                    </h4>
-
-                    <button
-                        type="button"
-                        data-eliminar
-                        class="btn btn-outline">
-
-                        Eliminar
-
-                    </button>
-
-                </div>
-
-                <div class="input-floating w-full mb-1">
-
-                <input
-                    type="text"
-                    class="input"
-                    placeholder=" "
-                    data-tipo />
-
-                <label class="input-floating-label">
-
-                    Tipo Hardware
-
-                </label>
-
-            </div>
-
-        </div>
-
-    `;
-
-    fila
-        .querySelector(
-            "[data-eliminar]"
-        )
-        .addEventListener(
-            "click",
-            () => {
-
-                if (
-                    document.querySelectorAll(
-                        ".hardware-item"
-                    ).length === 1
-                ) {
-
-                    mostrarMensaje(
-                        "Debe existir al menos un hardware",
-                        "error"
-                    );
-
-                    return;
-
-                }
-
-                fila.remove();
-
-                renumerarHardware();
-
-            }
-        );
-
-    container.appendChild(
-        fila
-    );
-
-    renumerarHardware();
-
-}
-
-function agregarEquipo() {
-
-    const container =
-        document.getElementById(
-            "equipos-container"
-        );
-
-    const numeroEquipo =
-        container.querySelectorAll(
-            ".equipo-item"
-        ).length + 1;
-
-    const equipo =
-        document.createElement(
-            "div"
-        );
-
-    equipo.className =
-        "equipo-item";
-
-    equipo.innerHTML = `
-
-        <div class="card border border-base-300 shadow-sm">
-
-            <div class="card-body p-2">
-
-                <div class="item-header">
-
-                    <h4>
-                        Equipo ${numeroEquipo}
-                    </h4>
-
-                    <button
-                        type="button"
-                        data-eliminar
-                        class="btn btn-outline">
-
-                        Eliminar
-
-                    </button>
-
-                </div>
-                <div class="input-floating w-full mb-1">
+                    <div class="input-floating w-full mb-1">
 
                     <input
                         type="text"
                         class="input"
                         placeholder=" "
-                        data-serial />
+                        data-tipo />
 
                     <label class="input-floating-label">
 
-                        Serial
+                        Tipo Hardware
 
                     </label>
 
                 </div>
 
-                <button
-                    type="button"
-                    data-buscar
-                    class="btn btn-outline mb-4">
+            </div>
 
-                    Buscar
+        `;
 
-                </button>
+        fila
+            .querySelector(
+                "[data-eliminar]"
+            )
+            .addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        document.querySelectorAll(
+                            ".hardware-item"
+                        ).length === 1
+                    ) {
+
+                        mostrarMensaje(
+                            "Debe existir al menos un hardware",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+                    fila.remove();
+
+                    renumerarHardware();
+
+                }
+            );
+
+        container.appendChild(
+            fila
+        );
+
+        renumerarHardware();
+
+    }
+
+    function agregarEquipo() {
+
+        const container =
+            document.getElementById(
+                "equipos-container"
+            );
+
+        const numeroEquipo =
+            container.querySelectorAll(
+                ".equipo-item"
+            ).length + 1;
+
+        const equipo =
+            document.createElement(
+                "div"
+            );
+
+        equipo.className =
+            "equipo-item";
+
+        equipo.innerHTML = `
+
+            <div class="card border border-base-300 shadow-sm">
+
+                <div class="card-body p-2">
+
+                    <div class="item-header">
+
+                        <h4>
+                            Equipo ${numeroEquipo}
+                        </h4>
+
+                        <button
+                            type="button"
+                            data-eliminar
+                            class="btn btn-outline">
+
+                            Eliminar
+
+                        </button>
+
+                    </div>
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            type="text"
+                            class="input"
+                            placeholder=" "
+                            data-serial />
+
+                        <label class="input-floating-label">
+
+                            Serial
+
+                        </label>
+
+
+                    </div>
+
+                    <button
+                        type="button"
+                        data-buscar
+                        class="btn btn-outline mb-4">
+
+                        Buscar
+
+                    </button>
+
+                    <div class="input-floating w-full mb-1">
+
+                    <input
+                        class="input"
+                        placeholder=" "
+                        data-marca
+                        readonly />
+
+                    <label class="input-floating-label">
+                        Marca
+                    </label>
+
+                </div>
 
                 <div class="input-floating w-full mb-1">
 
-                <input
-                    class="input"
-                    placeholder=" "
-                    data-marca
-                    readonly />
+                    <input
+                        class="input"
+                        placeholder=" "
+                        data-tipo
+                        readonly />
 
-                <label class="input-floating-label">
-                    Marca
-                </label>
+                    <label class="input-floating-label">
+                        Tipo
+                    </label>
 
-            </div>
+                </div>
 
-            <div class="input-floating w-full mb-1">
+                <div class="input-floating w-full mb-1">
 
-                <input
-                    class="input"
-                    placeholder=" "
-                    data-tipo
-                    readonly />
+                    <input
+                        class="input"
+                        placeholder=" "
+                        data-modelo
+                        readonly />
 
-                <label class="input-floating-label">
-                    Tipo
-                </label>
+                    <label class="input-floating-label">
+                        Modelo
+                    </label>
 
-            </div>
+                </div>
 
-            <div class="input-floating w-full mb-1">
+                <div class="input-floating w-full mb-1">
 
-                <input
-                    class="input"
-                    placeholder=" "
-                    data-modelo
-                    readonly />
+                    <input
+                        class="input"
+                        placeholder=" "
+                        data-inventario />
 
-                <label class="input-floating-label">
-                    Modelo
-                </label>
+                    <label class="input-floating-label">
+                        Inventario
+                    </label>
 
-            </div>
+                </div>
 
-            <div class="input-floating w-full mb-1">
+                <div class="input-floating w-full">
 
-                <input
-                    class="input"
-                    placeholder=" "
-                    data-inventario />
+                    <input
+                        class="input"
+                        placeholder=" "
+                        data-estado />
 
-                <label class="input-floating-label">
-                    Inventario
-                </label>
+                    <label class="input-floating-label">
+                        Estado
+                    </label>
 
-            </div>
+                </div>
 
-            <div class="input-floating w-full">
-
-                <input
-                    class="input"
-                    placeholder=" "
-                    data-estado />
-
-                <label class="input-floating-label">
-                    Estado
-                </label>
+                </div>
 
             </div>
 
-            </div>
+        `;
 
-        </div>
-
-    `;
-
-    container.appendChild(
+        container.appendChild(
+            equipo
+        );
+        
         equipo
-    );
+            .querySelectorAll(".input")
+            .forEach(campo => {
 
-    renumerarEquipos();
+                campo.addEventListener(
+                    "input",
+                    () => {
 
-    equipo
-        .querySelector(
-            "[data-buscar]"
-        )
-        .addEventListener(
-            "click",
-            () => buscarEquipoBloque(
-                equipo
+                        if (campo.value.trim()) {
+
+                            campo.classList.remove(
+                                "is-invalid"
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        renumerarEquipos();
+
+        equipo
+            .querySelector(
+                "[data-buscar]"
             )
-        );
-
-    equipo
-        .querySelector(
-            "[data-eliminar]"
-        )
-        .addEventListener(
-            "click",
-            () => {
-
-                if (
-                    document.querySelectorAll(
-                        ".equipo-item"
-                    ).length === 1
-                ) {
-
-                    mostrarMensaje(
-                        "Debe existir al menos un equipo",
-                        "error"
-                    );
-
-                    return;
-
-                }
-
-                equipo.remove();
-
-                renumerarEquipos();
-
-            }
-        );
-
-}
-
-async function buscarEquipoBloque(
-    bloque
-) {
-
-    const serial =
-        bloque.querySelector(
-            "[data-serial]"
-        ).value;
-
-    const response =
-        await fetch(
-            `http://127.0.0.1:8001/equipo/${serial}`
-        );
-
-    const data =
-        await response.json();
-
-    bloque.querySelector(
-        "[data-marca]"
-    ).value =
-        data.marca ?? "";
-
-    bloque.querySelector(
-        "[data-tipo]"
-    ).value =
-        data.tipo ?? "";
-
-    bloque.querySelector(
-        "[data-modelo]"
-    ).value =
-        data.modelo ?? "";
-
-}
-
-function renumerarEquipos() {
-
-    document
-        .querySelectorAll(".equipo-item")
-        .forEach((equipo, index) => {
-
-            equipo.querySelector("h4").textContent =
-                `Equipo ${index + 1}`;
-
-        });
-
-}
-
-function renumerarHardware() {
-
-    document
-        .querySelectorAll(".hardware-item")
-        .forEach((hardware, index) => {
-
-            hardware.querySelector("h4").textContent =
-                `Hardware ${index + 1}`;
-
-        });
-
-}
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        const entregadoPor =
-            document.getElementById(
-                "entregado_por"
+            .addEventListener(
+                "click",
+                () => buscarEquipoBloque(
+                    equipo
+                )
             );
 
-        const responsable =
-            document.getElementById(
-                "responsable_verificacion"
-            );
-
-        if (
-            entregadoPor &&
-            responsable
-        ) {
-
-            entregadoPor.addEventListener(
-                "input",
+        equipo
+            .querySelector(
+                "[data-eliminar]"
+            )
+            .addEventListener(
+                "click",
                 () => {
 
-                    responsable.value =
-                        entregadoPor.value;
+                    if (
+                        document.querySelectorAll(
+                            ".equipo-item"
+                        ).length === 1
+                    ) {
+
+                        mostrarMensaje(
+                            "Debe existir al menos un equipo",
+                            "error"
+                        );
+
+                        return;
+
+                    }
+
+                    equipo.remove();
+
+                    renumerarEquipos();
 
                 }
             );
 
-        }
+    }
+
+    async function buscarEquipoBloque(
+        bloque
+    ) {
+
+        const serial =
+            bloque.querySelector(
+                "[data-serial]"
+            ).value;
+
+        const response =
+            await fetch(
+                `http://127.0.0.1:8001/equipo/${serial}`
+            );
+
+        const data =
+            await response.json();
+
+        bloque.querySelector(
+            "[data-marca]"
+        ).value =
+            data.marca ?? "";
+
+        bloque.querySelector(
+            "[data-tipo]"
+        ).value =
+            data.tipo ?? "";
+
+        bloque.querySelector(
+            "[data-modelo]"
+        ).value =
+            data.modelo ?? "";
 
     }
-);
 
-window.addEventListener("load", () => {
+    function renumerarEquipos() {
 
-    flatpickr("#fecha", {
-        dateFormat: "Y-m-d",
-        monthSelectorType: "static",
-        allowInput: true
+        document
+            .querySelectorAll(".equipo-item")
+            .forEach((equipo, index) => {
+
+                equipo.querySelector("h4").textContent =
+                    `Equipo ${index + 1}`;
+
+            });
+
+    }
+
+    function renumerarHardware() {
+
+        document
+            .querySelectorAll(".hardware-item")
+            .forEach((hardware, index) => {
+
+                hardware.querySelector("h4").textContent =
+                    `Hardware ${index + 1}`;
+
+            });
+
+    }
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            const entregadoPor =
+                document.getElementById(
+                    "entregado_por"
+                );
+
+            const responsable =
+                document.getElementById(
+                    "responsable_verificacion"
+                );
+
+            if (
+                entregadoPor &&
+                responsable
+            ) {
+
+                entregadoPor.addEventListener(
+                    "input",
+                    () => {
+
+                        responsable.value =
+                            entregadoPor.value;
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+    window.addEventListener("load", () => {
+
+        flatpickr("#fecha", {
+            dateFormat: "Y-m-d",
+            monthSelectorType: "static",
+            allowInput: true
+        });
+
     });
 
-});
+    function validarCampo(id) {
+        
+        const campo =
+            document.getElementById(id);
+
+        const helper =
+            campo.parentElement.querySelector(
+                ".helper-text"
+            );
+
+        const vacio =
+            !campo.value.trim();
+
+        if (vacio) {
+
+            campo.classList.add("is-invalid");
+
+            if (helper) {
+                helper.style.display = "block";
+            }
+
+            return false;
+        }
+
+        campo.classList.remove("is-invalid");
+
+        if (helper) {
+            helper.style.display = "none";
+        }
+
+        return true;
+    }
+
+    function validarEquipos() {
+
+        let primerError = null;
+
+        document
+            .querySelectorAll(".equipo-item")
+            .forEach((equipo, index) => {
+
+                const campos = [
+                    {
+                        elemento: equipo.querySelector("[data-serial]"),
+                        nombre: `Serial del Equipo ${index + 1}`
+                    },
+                    {
+                        elemento: equipo.querySelector("[data-inventario]"),
+                        nombre: `Inventario del Equipo ${index + 1}`
+                    },
+                    {
+                        elemento: equipo.querySelector("[data-estado]"),
+                        nombre: `Estado del Equipo ${index + 1}`
+                    }
+                ];
+
+                campos.forEach(campo => {
+
+                    const vacio =
+                        !campo.elemento?.value?.trim();
+
+                    if (vacio) {
+
+                        campo.elemento.classList.add(
+                            "is-invalid"
+                        );
+
+                        if (!primerError) {
+
+                            primerError = {
+                                elemento: campo.elemento,
+                                nombre: campo.nombre
+                            };
+
+                        }
+
+                    } else {
+
+                        campo.elemento.classList.remove(
+                            "is-invalid"
+                        );
+
+                    }
+
+                });
+
+            });
+
+        return primerError;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+        document
+            .querySelectorAll(".input, .textarea")
+            .forEach(campo => {
+
+                campo.addEventListener("input", () => {
+
+                    if (campo.value.trim()) {
+
+                        campo.classList.remove("is-invalid");
+
+                        const helper =
+                            campo.parentElement.querySelector(
+                                ".helper-text"
+                            );
+
+                        if (helper) {
+                            helper.style.display = "none";
+                        }
+                    }
+
+                });
+
+            });
+
+    });
 
 
 
