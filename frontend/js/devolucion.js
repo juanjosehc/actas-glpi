@@ -554,7 +554,7 @@
                         class="input"
                         placeholder=" "
                         data-marca
-                        readonly />
+                        disabled />
 
                     <label class="input-floating-label">
                         Marca
@@ -568,7 +568,7 @@
                         class="input"
                         placeholder=" "
                         data-tipo
-                        readonly />
+                        disabled />
 
                     <label class="input-floating-label">
                         Tipo
@@ -582,7 +582,7 @@
                         class="input"
                         placeholder=" "
                         data-modelo
-                        readonly />
+                        disabled />
 
                     <label class="input-floating-label">
                         Modelo
