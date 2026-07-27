@@ -3,7 +3,6 @@ com\empresa\actas\dto\request\ActaRequest.class
 com\empresa\actas\service\DocumentoWordService.class
 com\empresa\actas\controller\EquipoController.class
 com\empresa\actas\service\ActaService.class
-com\empresa\actas\service\DocumentoPdfService.class
 com\empresa\actas\service\DevolucionService.class
 com\empresa\actas\dto\request\EquipoItem.class
 com\empresa\actas\controller\DevolucionController.class
