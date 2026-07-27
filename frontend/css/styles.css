@@ -46,15 +46,15 @@ html, body{
 }
 
 .logo-container {
-    width: 140px;
-    height: 50px;
-
     display: flex;
     align-items: center;
     justify-content: center;
+}
 
-    border: 2px dashed rgba(255,255,255,.4);
-    border-radius: 10px;
+.navbar-logo {
+    height: 55px;
+    width: auto;
+    object-fit: contain;
 }
 
 .navbar-title {
