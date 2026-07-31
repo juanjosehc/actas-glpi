@@ -3,5 +3,6 @@
         "**/generados/**": true,
         "**/app/venv/**": true,
         "**/__pycache__/**": true
-    }
+    },
+    "liveServer.settings.port": 5501
 }
