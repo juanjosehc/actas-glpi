@@ -289,7 +289,7 @@ public class DocumentoWordService {
      *
      * Soporta dos modos:
      * - classpath: Copia el recurso a un directorio temporal.
-     * - ruta directa: Resuelve相对于 templatesDir.
+     * - ruta directa: Resuelve respecto a templatesDir.
      *
      * @param templateName Nombre del archivo template.
      * @return Ruta resuelta del template.

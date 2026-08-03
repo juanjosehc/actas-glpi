@@ -31,7 +31,7 @@ public class ActaResponse {
      * @return ActaResponse con success=true.
      */
     public static ActaResponse ok(String nombreZip) {
-        return new ActaResponse(true, nombreZip, "Documentacion generada correctamente");
+        return new ActaResponse(true, nombreZip, "Documentación generada correctamente");
     }
 
     /**

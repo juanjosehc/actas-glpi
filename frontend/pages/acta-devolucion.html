@@ -1,9 +1,14 @@
 <!DOCTYPE html>
+<!--
+  Acta de Devolución — Gestión de Actas (Coltefinanciera).
+  Frontend estático; la URL del backend se define en js/config.js (API_URL).
+  En desarrollo se sirve con Live Server (puerto 5501).
+-->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acta de Entrega</title>
+    <title>Acta de Devolución</title>
 
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/output.css">
@@ -172,7 +177,7 @@
 
                                     <label
                                         class="input-floating-label"
-                                        for="cargo_recibe">
+                                        for="cargo_entrega">
                                         Cargo de quien entrega
                                     </label>
 
@@ -367,7 +372,7 @@
                         <div id="hardware-container">
 
                             <!--
-                            Los registros hardware/software
+                            Los elementos adicionales ("Otros Equipos")
                             se agregan dinámicamente aquí.
                             -->
 

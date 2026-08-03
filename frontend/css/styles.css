@@ -14,11 +14,6 @@ html, body{
     
 }
 
-.container{
-    max-width:800px;
-    margin:auto;
-}
-
 /* =========================
    NAVBAR
    ========================= */
@@ -123,28 +118,6 @@ button{
 .card.border {
 
     border-color: #1E3A8A !important;
-
-}
-
-.form-field {
-
-    display: flex;
-
-    flex-direction: column;
-
-    margin-bottom: 12px;
-
-}
-
-.form-field label {
-
-    margin-bottom: 4px;
-
-}
-
-.form-field input {
-
-    padding: 8px;
 
 }
 
@@ -472,39 +445,6 @@ textarea {
 
 }
 
-.btn-generar {
-
-    background: #1E3A8A;
-
-    color: white;
-
-    border: none;
-
-    border-radius: 12px;
-
-    padding: 14px 28px;
-
-    font-size: 1rem;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: all 0.2s ease;
-
-}
-
-.btn-generar:hover {
-
-    background: #1D4ED8;
-
-    transform: translateY(-2px);
-
-    box-shadow:
-        0 10px 20px rgba(30,58,138,.2);
-
-}
-
 
 .hero-header {
 
@@ -610,16 +550,6 @@ textarea {
 
 }
 
-.checklist-grid {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 10px;
-
-}
-
 .check-item {
 
     display: flex;
@@ -708,26 +638,6 @@ textarea {
 
 }
 
-.radio-group {
-
-    display: flex;
-
-    gap: 15px;
-
-    margin-bottom: 15px;
-
-}
-
-.check-actions {
-
-    display: flex;
-
-    gap: 10px;
-
-    margin-bottom: 15px;
-
-}
-
 .radio-primary {
     --color-primary: #1E3A8A !important;
 }
@@ -797,10 +707,6 @@ textarea {
 .so-radios {
     padding: 8px;
     border-radius: 8px;
-}
-
-.so-radios.is-invalid {
-    border: 2px solid #ef4444;
 }
 
 .radio-so-error {
