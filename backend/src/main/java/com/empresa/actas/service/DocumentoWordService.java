@@ -130,8 +130,8 @@ public class DocumentoWordService {
      * Prepara:
      * - Fecha descompuesta en dia, mes, anio.
      * - responsable_verificacion = entregado_por.
-     * - Sistema operativo como checkboxes (win10, win11, macos) con cuadrados.
-     * - 36 checkboxes (chk_N_si / chk_N_no) con cuadrados marcado/desmarcado.
+     * - Sistema operativo como checkboxes (win10, win11, macos) con X/vacío.
+     * - 36 checkboxes (chk_N_si / chk_N_no) con X/vacío.
      * - Solo el primer equipo (para la sección de identificación).
      *
      * Template: "ListaChequeo.docx"
@@ -153,9 +153,9 @@ public class DocumentoWordService {
 
         String so = datos.getOrDefault("sistema_operativo", "").toString();
 
-        datos.put("win10", "Windows 10".equals(so) ? "\u25A0" : "\u25A1");
-        datos.put("win11", "Windows 11".equals(so) ? "\u25A0" : "\u25A1");
-        datos.put("macos", "Mac OS".equals(so) ? "\u25A0" : "\u25A1");
+        datos.put("win10", "Windows 10".equals(so) ? "X" : "");
+        datos.put("win11", "Windows 11".equals(so) ? "X" : "");
+        datos.put("macos", "Mac OS".equals(so) ? "X" : "");
 
         Map<String, Object> chk = asMap(datos.get("checklist"));
         for (int i = 1; i <= 36; i++) {
@@ -166,8 +166,8 @@ public class DocumentoWordService {
             } else if (val != null) {
                 valor = Boolean.parseBoolean(val.toString());
             }
-            datos.put("chk_" + i + "_si", valor ? "\u25A0" : "\u25A1");
-            datos.put("chk_" + i + "_no", valor ? "\u25A1" : "\u25A0");
+            datos.put("chk_" + i + "_si", valor ? "X" : "");
+            datos.put("chk_" + i + "_no", valor ? "" : "X");
         }
 
         List<Map<String, Object>> eqList = asMapList(datos.get("equipos"));

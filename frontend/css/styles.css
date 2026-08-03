@@ -817,3 +817,147 @@ textarea {
     opacity: 1 !important;
 
 }
+
+/* =========================
+   NOTIFICACIONES TOAST
+   ========================= */
+
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 360px;
+    max-width: calc(100vw - 40px);
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-left: 4px solid #64748B;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    color: #0F172A;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+    animation: toast-in 0.35s ease forwards;
+}
+
+.toast--success {
+    border-left-color: #16A34A;
+}
+
+.toast--warning {
+    border-left-color: #D97706;
+}
+
+.toast--error {
+    border-left-color: #DC2626;
+}
+
+.toast--info {
+    border-left-color: #1E3A8A;
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.toast--success .toast-icon {
+    color: #16A34A;
+}
+
+.toast--warning .toast-icon {
+    color: #D97706;
+}
+
+.toast--error .toast-icon {
+    color: #DC2626;
+}
+
+.toast--info .toast-icon {
+    color: #1E3A8A;
+}
+
+.toast.is-out {
+    animation: toast-out 0.3s ease forwards;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+}
+
+/* =========================
+   AUTOCOMPLETADO USUARIOS
+   ========================= */
+
+.autocomplete {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+    padding: 6px;
+}
+
+.autocomplete.is-open {
+    display: block;
+}
+
+.autocomplete-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #0F172A;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.autocomplete-item.is-active {
+    background: #EFF6FF;
+    color: #1E3A8A;
+    font-weight: 500;
+}
+
+.autocomplete-item--sin-resultados {
+    color: #64748B;
+    font-style: italic;
+    cursor: default;
+}
