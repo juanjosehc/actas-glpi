@@ -48,7 +48,7 @@ Dependencias:
  * URL del endpoint de búsqueda de usuarios.
  */
 const USUARIOS_API_URL =
-    "http://127.0.0.1:8001/usuarios";
+    API_URL + "/usuarios";
 
 /**
  * Tiempo mínimo (ms) entre toasts de error repetidos

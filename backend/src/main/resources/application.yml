@@ -24,8 +24,8 @@ spring:
 # Tokens se cargan desde variables de entorno o .env.
 glpi:
   url: ${GLPI_URL:http://10.86.1.33/glpi/apirest.php}
-  app-token: ${GLPI_APP_TOKEN:ZRsogtQqJgimxPwWxROo0F2WJdvLrsH0XLtcBKu8}
-  user-token: ${GLPI_USER_TOKEN:sX4sG98XFSnNyVaLwDckHwpdxNgO6rxrOUsN1vht}
+  app-token: ${GLPI_APP_TOKEN}
+  user-token: ${GLPI_USER_TOKEN}
 
 # --- Rutas de archivos ---
 # Directorio donde se guardan los ZIP/DOCX generados.
