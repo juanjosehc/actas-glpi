@@ -1,3 +1,21 @@
+/*
+====================================================
+FUENTE DE ESTILOS (TAILWIND CSS + FLYONUI)
+====================================================
+
+Archivo fuente del pipeline de estilos del frontend.
+NO editar css/output.css directamente: los cambios
+se hacen en este archivo y se regenera el CSS final con:
+
+  npm run build:css
+  (ejecuta @tailwindcss/cli -i css/app.css -o css/output.css --minify)
+
+Los @source inline(...) declaran las variantes de
+FlyonUI usadas en las páginas para que Tailwind las
+incluya en el CSS final.
+
+====================================================
+*/
 @import "tailwindcss";
 
 @plugin "flyonui";

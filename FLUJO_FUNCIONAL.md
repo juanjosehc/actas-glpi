@@ -10,9 +10,10 @@ Este documento describe paso a paso el funcionamiento de cada tipo de acta, desd
 2. [Acta de Entrega](#2-acta-de-entrega)
 3. [Acta de Devolución](#3-acta-de-devolución)
 4. [Búsqueda de equipo en GLPI](#4-búsqueda-de-equipo-en-glpi)
-5. [Generación de documentos Word](#5-generación-de-documentos-word)
-6. [Empaquetado y descarga ZIP](#6-empaquetado-y-descarga-zip)
-7. [Validaciones](#7-validaciones)
+5. [Autocompletado de usuarios](#5-autocompletado-de-usuarios)
+6. [Generación de documentos Word](#6-generación-de-documentos-word)
+7. [Empaquetado y descarga ZIP](#7-empaquetado-y-descarga-zip)
+8. [Validaciones](#8-validaciones)
 
 ---
 
@@ -25,18 +26,19 @@ flowchart TD
     B -->|Devolución| D[acta-devolucion.html]
     C --> E[Completar formulario]
     D --> E
-    E --> F[Buscar equipos en GLPI]
-    F --> G[Agregar hardware y otros]
-    G --> H[Completar checklist]
+    E --> F[Buscar equipos en GLPI por serial]
+    E --> F2[Autocompletar personas desde GLPI]
+    F --> G[Agregar hardware / otros elementos]
+    G --> H[Entrega: completar checklist y SO]
     H --> I[Click en Generar Acta]
     I --> J[Validar campos]
     J -->|Error| K[Mostrar error y scroll al campo]
     K --> E
     J -->|OK| L[Enviar POST al backend]
-    L --> M[Backend genera DOCX]
+    L --> M[Backend genera DOCX desde plantillas]
     M --> N[Backend empaqueta ZIP]
     N --> O[Frontend descarga ZIP]
-    O --> P[Usuario abre documentos]
+    O --> P[Usuario abre los documentos]
 ```
 
 ---
@@ -51,39 +53,37 @@ La acta de entrega genera **dos documentos**: el acta de entrega y la lista de c
 flowchart LR
     subgraph DatosActa["Datos del Acta"]
         A1[Fecha]
-        A2[Entregado a]
+        A2[Entregado a (autocompletable)]
         A3[Cargo quien recibe]
-        A4[Entregado por]
+        A4[Entregado por (autocompletable)]
         A5[Cargo quien entrega]
         A6[Asunto]
+        A7[Número SAC]
+        A8[Sistema operativo]
     end
 
-    subgraph Equi["Equipos"]
+    subgraph Equi["Equipos (máx. 3)"]
         B1[Serial]
-        B2[Buscar - GLPI auto-completa]
+        B2[Buscar - GLPI auto-completa marca/tipo/modelo]
         B3[Inventario]
     end
 
-    subgraph Hard["Hardware"]
+    subgraph Hard["Hardware / Software (máx. 9)"]
         C1[Tipo]
         C2[Descripción]
         C3[Programa]
     end
 
     subgraph Check["Checklist"]
-        D1[Número SAC]
-        D2[Sistema operativo: Win10, Win11 o Mac]
-        D3[36 checkboxes en 6 secciones]
+        D1[36 checkboxes en 6 secciones]
     end
 ```
 
-**Campos obligatorios del acta:** Fecha, Entregado a, Cargo quien recibe, Entregado por, Cargo quien entrega, Asunto, Número SAC.
+**Campos obligatorios del acta:** Fecha, Entregado a, Cargo quien recibe, Entregado por, Cargo quien entrega, Asunto, Número SAC, Sistema operativo.
 
 **Campos obligatorios por equipo:** Serial, Inventario.
 
-**Campos del checklist:** Sistema operativo (radio), 36 checkboxes agrupados.
-
-### 2.2 Checklist - Secciones
+### 2.2 Checklist — Secciones
 
 | Sección | Checkboxes | Ejemplos |
 |---------|-----------|----------|
@@ -104,42 +104,41 @@ sequenceDiagram
     participant Z as ZipService
 
     U->>B: POST /generar-acta
-    Note over U,B: Payload: fecha, entregado_a, equipos, hardware, checklist
+    Note over U,B: Payload: fecha, entregado_a, cargo_recibe, entregado_por,<br/>cargo_entrega, asunto, numero_sac, sistema_operativo,<br/>observaciones, equipos[], hardware[], checklist{chk_1..36}
 
     B->>B: Validar @NotBlank en ActaRequest
-    alt Validacion falla
-        B-->>U: 400 con error
+    alt Validación falla
+        B-->>U: 400 con ErrorResponse
     end
 
-    B->>W: generarActa datos
+    B->>W: generarActa(datos)
     W->>W: Preparar fecha en dia, mes, anio
-    W->>W: Indexar 11 hardware items
-    W->>W: Indexar 10 equipos
-    W->>W: Procesar template Acta de Entrega
+    W->>W: Indexar hardware (hw_1..11)
+    W->>W: Indexar equipos (eq_1..10)
+    W->>W: Procesar template "Acta de Entrega 2 2 - copia.docx"
     W-->>B: Archivo ActaEntrega DOCX
 
-    B->>W: generarChecklist datos
-    W->>W: Preparar SO con cuadrados
-    W->>W: Preparar 36 checkboxes
-    W->>W: Solo primer equipo para identificacion
-    W->>W: Procesar template ListaChequeo
+    B->>W: generarChecklist(datos)
+    W->>W: SO → win10/win11/macos ("X" o vacío)
+    W->>W: 36 checkboxes chk_N_si / chk_N_no ("X" o vacío)
+    W->>W: Solo primer equipo para identificación
+    W->>W: responsable_verificacion = entregado_por
+    W->>W: Procesar template ListaChequeo.docx
     W-->>B: Archivo Checklist DOCX
 
-    B->>Z: crearZip con acta y checklist
+    B->>Z: crearZip(acta, checklist)
     Z-->>B: ZIP generado
 
-    B-->>U: Respuesta con nombre_zip
-
-    U->>U: GET /descargar-acta con nombre_zip
-    U->>U: Crear enlace de descarga y hacer click
+    B-->>U: { success, nombre_zip: "ActaLista_{serial}_{asunto}.zip" }
+    U->>U: GET /descargar-acta con nombre_zip → descarga
 ```
 
 ### 2.4 Documentos generados
 
 | Documento | Contenido |
 |-----------|-----------|
-| ActaEntrega con serial y asunto | Acta de entrega con datos de entrega, equipos y hardware |
-| Checklist con serial y asunto | Lista de 36 verificaciones con SO y datos del primer equipo |
+| ActaEntrega con serial y asunto | Datos de entrega, equipos y hardware |
+| Checklist con serial y asunto | 36 verificaciones, SO y datos del primer equipo |
 
 ---
 
@@ -153,34 +152,34 @@ La acta de devolución genera **un solo documento**: el acta de devolución.
 flowchart LR
     subgraph DatosActa["Datos del Acta"]
         A1[Fecha]
-        A2[Nombre quien entrega]
-        A3[Cedula quien entrega]
+        A2[Entregado por (autocompletable)]
+        A3[Cédula quien entrega]
         A4[Cargo quien entrega]
-        A5[Recibido por]
+        A5[Recibido por (autocompletable)]
         A6[Cargo quien recibe]
-        A7[Area quien recibe]
-        A8[Motivo devolucion]
+        A7[Área quien recibe]
+        A8[Motivo devolución]
     end
 
-    subgraph Equi["Equipos"]
+    subgraph Equi["Equipos (máx. 3)"]
         B1[Serial]
         B2[Buscar GLPI]
         B3[Inventario]
         B4[Estado]
     end
 
-    subgraph Otros["Otros Elementos"]
+    subgraph Otros["Otros Elementos (máx. 3)"]
         C1[Tipo]
     end
 ```
 
-> **Nota:** El campo **Estado** existe unicamente en el flujo de devolucion. El bloque **Otros Elementos** solo solicita el tipo de elemento y no incluye descripcion.
+> **Nota:** El campo **Estado** existe únicamente en el flujo de devolución. El bloque **Otros Elementos** solo solicita el tipo de elemento (no incluye descripción ni programa).
 
-**Campos obligatorios:** Fecha, Nombre quien entrega, Cedula, Cargo quien entrega, Recibido por, Cargo quien recibe, Area quien recibe, Motivo.
+**Campos obligatorios:** Fecha, Nombre quien entrega, Cédula, Cargo quien entrega, Recibido por, Cargo quien recibe, Área quien recibe, Motivo.
 
 **Campos obligatorios por equipo:** Serial, Inventario, **Estado**.
 
-> **Diferencia clave con entrega:** El acta de devolucion NO incluye checklist ni sistema operativo. SI incluye campo "Estado" por cada equipo.
+> **Diferencia clave con entrega:** La devolución NO incluye checklist ni sistema operativo. SÍ incluye el campo "Estado" por equipo y el bloque "Otros Elementos".
 
 ### 3.2 Envío y respuesta
 
@@ -192,34 +191,32 @@ sequenceDiagram
     participant Z as ZipService
 
     U->>B: POST /generar-devolucion
-    Note over U,B: Payload: fecha, entregado_por, cedula, equipos, hardware
+    Note over U,B: Payload: fecha, entregado_por, cedula, cargo_entrega,<br/>recibido_por, cargo_recibe, area_recibe, motivo,<br/>observaciones, equipos[], hardware[]
 
-    B->>B: Validar @NotBlank en DevolucionRequest
-    alt Validacion falla
-        B-->>U: 400 con error
+    B->>B: Validar @NotBlank (fecha) en DevolucionRequest
+    alt Validación falla
+        B-->>U: 400 con ErrorResponse
     end
 
-    B->>W: generarDevolucion datos
+    B->>W: generarDevolucion(datos)
     W->>W: Preparar fecha en dia, mes, anio
-    W->>W: Indexar 10 equipos con estado
-    W->>W: Indexar 10 otros elementos
-    W->>W: Procesar template ActaDevolucion
+    W->>W: Indexar 10 equipos con estado (eq_1..10)
+    W->>W: Indexar 10 otros elementos (ot_1..10) desde hardware[]
+    W->>W: Procesar template ActaDevolucion.docx
     W-->>B: Archivo Devolucion DOCX
 
-    B->>Z: crearZip con devolucion
+    B->>Z: crearZip(devolucion)
     Z-->>B: ZIP generado
 
-    B-->>U: Respuesta con nombre_zip
-
-    U->>U: GET /descargar-acta con nombre_zip
-    U->>U: Crear enlace de descarga y hacer click
+    B-->>U: { success, nombre_zip: "Devolucion_{serial}_{motivo}.zip" }
+    U->>U: GET /descargar-acta con nombre_zip → descarga
 ```
 
 ### 3.3 Documento generado
 
 | Documento | Contenido |
 |-----------|-----------|
-| Devolucion con serial y motivo | Acta de devolucion con datos de entrega y devolucion, equipos con estado y otros elementos |
+| Devolución con serial y motivo | Datos de entrega/devolución, equipos con estado y otros elementos |
 
 ---
 
@@ -230,14 +227,14 @@ Cuando el usuario hace click en "Buscar" dentro de un bloque de equipo:
 ```mermaid
 flowchart TD
     A[Click en Buscar] --> B[Leer serial del input]
-    B --> C[GET /equipo con serial]
+    B --> C[GET /equipo/{serial}]
     C --> D[Backend: POST /initSession]
     D --> E[Backend: GET /search/Computer]
     E --> F{¿Equipo encontrado?}
-    F -->|No| G[Retornar marca tipo modelo vacios]
-    F -->|Si| H[Extraer campos 23 4 40 17]
+    F -->|No| G[Retornar marca tipo modelo vacíos]
+    F -->|Sí| H[Extraer campos 23 4 40 17]
     H --> I[Abreviar CPU]
-    I --> J[Concatenar modelo y sufijo CPU]
+    I --> J[Concatenar modelo + sufijo CPU]
     J --> K[Retornar EquipoResponse]
     G --> L[Actualizar inputs deshabilitados]
     K --> L
@@ -246,33 +243,60 @@ flowchart TD
 
 **Procesamiento del CPU:**
 
-El nombre completo del procesador se abrevia para el acta:
+El nombre completo del procesador se abrevia para el acta (regex en `EquipoService.cpuCorto`):
 
 | GLPI campo 17 | Acta |
 |-----------------|------|
-| Intel Core i5-12400 | Core i5 |
+| Intel(R) Core(TM) i5-12400 | Core i5 |
 | AMD Ryzen 5 5600X | Ryzen 5 |
-| 12th Gen Intel Core i7-12700K | Core i7 |
-| Intel Xeon E5-2620 | Xeon |
+| 12th Gen Intel(R) Core(TM) i7-12700K | Core i7 |
+| Intel(R) Xeon E5-2620 | Xeon |
+
+> **Nota:** Si GLPI no responde o no encuentra el equipo, la respuesta es un `EquipoResponse` con `marca`, `tipo` y `modelo` vacíos. El backend nunca rompe el flujo por un error de GLPI (manejo silencioso).
 
 ---
 
-## 5. Generación de documentos Word
+## 5. Autocompletado de usuarios
 
-### 5.1 Motor de templates DocxTemplateEngine
+Se activa al escribir **3 o más caracteres** en los campos de personas:
 
-El motor reemplaza placeholders en formato doble llave en documentos Word preservando el formato original.
+```mermaid
+flowchart TD
+    A[Escribir texto en campo persona] --> B{¿3+ caracteres?}
+    B -->|No| C[No buscar]
+    B -->|Sí| D[GET /usuarios?texto=...]
+    D --> E[Backend: POST /initSession]
+    E --> F[Backend: GET /search/User firstname OR realname contains]
+    F --> G[Limitar a 10 resultados]
+    G --> H[Mostrar lista de sugerencias]
+    H --> I{¿Selecciona?}
+    I -->|Sí| J[Rellenar el campo con el nombre]
+    I -->|No| K[Seguir escribiendo / ignorar con Esc]
+```
+
+| Página | Campos |
+|--------|--------|
+| Acta de Entrega | Entregado a, Entregado por |
+| Acta de Devolución | Entregado por, Recibido por |
+
+---
+
+## 6. Generación de documentos Word
+
+### 6.1 Motor de templates DocxTemplateEngine
+
+El motor reemplaza placeholders en formato doble llave (`{{ var }}`) en documentos Word preservando el formato original.
 
 ```mermaid
 flowchart TD
     A[Template DOCX] --> B[Copiar a archivo de salida]
     B --> C[Abrir con Apache POI]
-    C --> D{¿Mas parrafos?}
-    D -->|Si| E[Leer runs del parrafo]
+    C --> D{¿Más párrafos?}
+    D -->|Sí| E[Leer runs del párrafo]
     E --> F[Concatenar texto de todos los runs]
-    F --> G{¿Contiene marcador de variable?}
+    F --> G{¿Contiene marcador?}
     G -->|No| D
-    G -->|Si| H[Buscar placeholders con regex]
+    G -->|Sí| H[Buscar placeholders con regex]
     H --> I[Para cada run reconstruir texto]
     I --> J[Reemplazar placeholder con valor]
     J --> K[Guardar texto en el run]
@@ -281,9 +305,9 @@ flowchart TD
     L --> M[Guardar documento]
 ```
 
-### 5.2 Por qué a nivel de run
+### 6.2 Por qué a nivel de run
 
-Cuando Word aplica formato diferente (negrita, color, tamaño) a partes de un mismo texto, lo fragmenta en multiples "runs". Ejemplo:
+Cuando Word aplica formato diferente (negrita, color, tamaño) a partes de un mismo texto, lo fragmenta en múltiples "runs". Ejemplo:
 
 ```
 Run 1: "Serial: "           formato normal
@@ -291,68 +315,83 @@ Run 2: "placeholder_serial" formato negrita
 Run 3: " "                  formato normal
 ```
 
-El placeholder esta completamente en el Run 2. Este motor detecta en que run inicia el placeholder y escribe el valor ahi, preservando la negrita del Run 2.
+Este motor detecta en qué run inicia el placeholder y escribe el valor ahí, preservando la negrita del Run 2.
 
-### 5.3 Preparación de datos
+### 6.3 Preparación de datos
 
-Antes de pasar los datos al motor, DocumentoWordService transforma la informacion:
+Antes de pasar los datos al motor, `DocumentoWordService` transforma la información:
 
 **Fecha:**
 
 ```
-fecha: 2026-07-23  -->  dia: 23, mes: 07, anio: 2026
+fecha: 2026-07-23  →  dia: 23, mes: 07, anio: 2026
 ```
 
 **Equipos indexados:**
 
 ```
-equipos[0].marca = Dell      -->  eq_1_marca = Dell
-equipos[0].serial = ABC123   -->  eq_1_serial = ABC123
-equipos[1].marca = HP        -->  eq_2_marca = HP
+equipos[0].marca = Dell      →  eq_1_marca = Dell
+equipos[0].serial = ABC123   →  eq_1_serial = ABC123
+equipos[1].marca = HP        →  eq_2_marca = HP
 ```
 
-**Hardware indexado:**
+**Hardware indexado (acta de entrega):**
 
 ```
-hardware[0].tipo = Monitor            -->  hw_1_tipo = Monitor
-hardware[0].descripcion = 24 pulgadas -->  hw_1_descripcion = 24 pulgadas
+hardware[0].tipo = Monitor            →  hw_1_tipo = Monitor
+hardware[0].descripcion = 24 pulgadas →  hw_1_descripcion = 24 pulgadas
 ```
 
-**Checkboxes marcados y desmarcados:**
+**Otros elementos (acta de devolución):**
 
 ```
-chk_1 = true   -->  chk_1_si = cuadrado lleno, chk_1_no = cuadrado vacio
-chk_2 = false  -->  chk_2_si = cuadrado vacio, chk_2_no = cuadrado lleno
+hardware[0].tipo = Teclado  →  ot_1_tipo = Teclado
+```
+
+**Checkboxes marcados y desmarcados (carácter "X"):**
+
+```
+chk_1 = true   →  chk_1_si = "X", chk_1_no = ""
+chk_2 = false  →  chk_2_si = "",  chk_2_no = "X"
 ```
 
 **Sistema operativo:**
 
 ```
 sistema_operativo = Windows 11
-  --> win10 = vacio, win11 = lleno, macos = vacio
+  →  win10 = "", win11 = "X", macos = ""
 ```
+
+**Límites del template (backend, se rellenan con vacío los no enviados):**
+
+| Prefijo | Máx. |
+|---------|------|
+| `eq_N_` | 10 |
+| `hw_N_` | 11 |
+| `ot_N_` | 10 |
+| `chk_N_si/no` | 36 |
 
 ---
 
-## 6. Empaquetado y descarga ZIP
+## 7. Empaquetado y descarga ZIP
 
-### 6.1 Creación del ZIP
+### 7.1 Creación del ZIP
 
 ```mermaid
 flowchart LR
     A[DOCX 1 Acta] --> C[ZipOutputStream]
     B[DOCX 2 Checklist] --> C
-    C --> D[ZIP con nombre basado en serial y asunto]
+    C --> D[ZIP con nombre basado en serial y asunto/motivo]
 ```
 
-El nombre del ZIP se construye con:
+El nombre del ZIP se construye así:
 
-- **Entrega:** ActaLista + serial del primer equipo + guion bajo + asunto sin caracteres especiales + .zip
-- **Devolución:** Devolucion + serial del primer equipo + guion bajo + motivo sin caracteres especiales + .zip
+- **Entrega:** `ActaLista` + serial del primer equipo + `_` + asunto sin caracteres especiales + `.zip`
+- **Devolución:** `Devolucion` + serial del primer equipo + `_` + motivo sin caracteres especiales + `.zip`
 
-Los caracteres especiales se eliminan del asunto o motivo con replaceAll.
+Los caracteres especiales se eliminan con `replaceAll("[^a-zA-Z0-9]", "")`. Si no hay equipos, el serial es `SinSerial`.
 
-### 6.2 Descarga
+### 7.2 Descarga
 
 ```mermaid
 sequenceDiagram
@@ -360,64 +399,59 @@ sequenceDiagram
     participant B as Backend
     participant N as Navegador
 
-    U->>B: GET /descargar-acta con nombreZip
+    U->>B: GET /descargar-acta/{nombreZip}
     B->>B: Verificar que el archivo existe
     alt Archivo no existe
-        B-->>U: Error archivo no encontrado
+        B-->>U: Error "Archivo no encontrado"
     end
-    B-->>U: 200 OK con Content-Type octet-stream
+    B-->>U: 200 OK con Content-Type application/octet-stream
     Note over U: Content-Disposition attachment
-
-    U->>U: Crear Blob desde response
+    U->>U: Crear Blob desde la respuesta
     U->>U: Crear URL temporal
-    U->>U: Crear elemento enlace con href y download
-    U->>U: Agregar enlace al DOM
+    U->>U: Crear elemento <a> con href y download
     U->>N: click en el enlace
     N->>N: Descargar archivo
-    U->>U: Eliminar enlace del DOM
-    U->>U: Revocar URL temporal
+    U->>U: Eliminar el enlace y revocar la URL temporal
 ```
-
-El navegador muestra la descarga en la barra de descargas. El usuario puede abrir el ZIP directamente.
 
 ---
 
-## 7. Validaciones
+## 8. Validaciones
 
-### 7.1 Acta de Entrega
+### 8.1 Acta de Entrega
 
 ```mermaid
 flowchart TD
-    A[Click en Generar Acta] --> B{¿Campos obligatorios validos?}
+    A[Click en Generar Acta] --> B{¿Campos obligatorios válidos?}
     B -->|No| C[Marcar is-invalid]
-    C --> D[Scroll al primer campo invalido]
-    D --> E[Mostrar Complete los campos obligatorios]
-    B -->|Si| F{¿Sistema operativo seleccionado?}
-    F -->|No| G[Marcar radio-so-error en todos los radios]
+    C --> D[Scroll al primer campo inválido]
+    D --> E[Mostrar "Complete los campos obligatorios"]
+    B -->|Sí| F{¿Sistema operativo seleccionado?}
+    F -->|No| G[Marcar radio-so-error en los radios]
     G --> H[Scroll al SO]
-    H --> I[Mostrar Debe seleccionar un sistema operativo]
-    F -->|Si| J{¿Equipos validos?}
-    J -->|No| K[Marcar campos invalidos en equipo]
+    H --> I[Mostrar "Debe seleccionar un sistema operativo"]
+    F -->|Sí| J{¿Equipos válidos?}
+    J -->|No| K[Marcar campos inválidos en equipo]
     K --> L[Scroll al primer error]
-    L --> M[Mostrar Debe completar Serial o Inventario]
-    J -->|Si| N[Construir payload]
+    L --> M[Mostrar "Debe completar Serial o Inventario"]
+    J -->|Sí| N[Construir payload]
     N --> O[Enviar POST]
     O --> P{¿Respuesta OK?}
     P -->|No| Q[Mostrar error del backend]
-    P -->|Si| R[Mostrar Documentacion generada correctamente]
+    P -->|Sí| R[Mostrar "Documentación generada correctamente"]
     R --> S[Descargar ZIP]
 ```
 
-### 7.2 Acta de Devolución
+### 8.2 Acta de Devolución
 
 Mismo flujo que entrega, con estas diferencias:
 
-- **Campos obligatorios diferentes:** Incluye cedula, area y motivo.
-- **Sin validacion de SO:** No hay sistema operativo.
-- **Validacion de equipo incluye Estado:** Serial, Inventario y Estado son obligatorios.
-- **Sin checklist:** Se omite toda la seccion de verificacion.
+- **Campos obligatorios diferentes:** incluye cédula, área y motivo.
+- **Sin validación de SO:** no hay sistema operativo.
+- **Validación de equipo incluye Estado:** serial, inventario y estado son obligatorios.
+- **Sin checklist:** se omite toda la sección de verificación.
 
-### 7.3 Resumen de validaciones por campo
+### 8.3 Resumen de validaciones por campo
 
 | Campo | Entrega | Devolución | Obligatorio |
 |-------|---------|------------|-------------|
@@ -435,3 +469,5 @@ Mismo flujo que entrega, con estas diferencias:
 | Serial equipo | Si | Si | Si |
 | Inventario equipo | Si | Si | Si |
 | Estado equipo | No | Si | Si |
+| Máx. equipos | 3 | 3 | — |
+| Máx. hardware/otros | 9 | 3 | — |

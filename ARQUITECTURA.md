@@ -2,22 +2,36 @@
 
 ## Visión general
 
-El sistema actas-glpi sigue una arquitectura **cliente-servidor** de dos capas:
+El sistema actas-glpi sigue una arquitectura **cliente-servidor** de dos capas. El frontend (web estática) se comunica con el backend (API REST Spring Boot), que a su vez consulta la API REST de GLPI para buscar equipos y usuarios, y genera los documentos DOCX.
 
-```
-┌─────────────────┐         HTTP/JSON        ┌─────────────────────┐
-│                  │ ───────────────────────► │                     │
-│    Frontend      │                          │    Backend API      │
-│  (HTML/JS/CSS)   │ ◄─────────────────────── │  (Spring Boot)      │
-│                  │     ZIP descargable       │                     │
-└─────────────────┘                          └──────────┬──────────┘
-                                                        │
-                                                        │ HTTP REST
-                                                        ▼
-                                             ┌─────────────────────┐
-                                             │   Instancia GLPI    │
-                                             │  (API REST externa) │
-                                             └─────────────────────┘
+```mermaid
+flowchart LR
+    subgraph FE["Frontend (estático)"]
+        P1[acta-entrega.html]
+        P2[acta-devolucion.html]
+    end
+    subgraph BE["Backend Spring Boot (:8001)"]
+        C[Controllers]
+        S[Services]
+        W[DocumentoWordService]
+        E[DocxTemplateEngine]
+        Z[ZipService]
+        G[GlpiClient]
+    end
+    subgraph EXT["Externos"]
+        GLPI[(GLPI API REST)]
+        DOCX[(Plantillas DOCX)]
+        TMP[(Dir. generados)]
+    end
+
+    P1 -->|HTTP/JSON| C
+    P2 -->|HTTP/JSON| C
+    C --> S
+    S --> W --> DOCX
+    W --> E
+    S --> Z --> TMP
+    S --> G -->|initSession / search| GLPI
+    C -->|GET /descargar-acta| TMP
 ```
 
 ## Backend
@@ -30,6 +44,7 @@ El sistema actas-glpi sigue una arquitectura **cliente-servidor** de dos capas:
 - **Jackson** para serialización JSON
 - **Jakarta Validation** para validación de DTOs
 - **Lombok** para reducir boilerplate
+- **dotenv-java 3.2.0** para cargar `.env`
 
 ### Paquetes del backend
 
@@ -38,30 +53,34 @@ com.empresa.actas/
 ├── ActasApplication.java          # Punto de entrada
 ├── config/
 │   ├── AppConfig.java             # Carga .env, crea directorio de salida
-│   └── CorsConfig.java           # Permite peticiones desde el frontend
+│   └── CorsConfig.java            # Permite peticiones desde el frontend
 ├── controller/
 │   ├── ActaController.java        # POST /generar-acta, GET /descargar-acta/{zip}
 │   ├── DevolucionController.java  # POST /generar-devolucion
-│   └── EquipoController.java      # GET /equipo/{serial}
+│   ├── EquipoController.java      # GET /equipo/{serial}
+│   └── UsuarioController.java     # GET /usuarios?texto=
 ├── dto/
 │   ├── request/
-│   │   ├── ActaRequest.java       # DTO entrada: acta de entrega
-│   │   ├── DevolucionRequest.java # DTO entrada: acta de devolución
-│   │   ├── EquipoItem.java        # Equipo (serial, marca, tipo, modelo, inv, estado)
-│   │   ├── HardwareItem.java      # Hardware entrega (tipo, desc, programa)
-│   │   └── OtroElementoItem.java  # Hardware devolución (solo tipo)
+│   │   ├── ActaRequest.java       # Entrada: acta de entrega + checklist
+│   │   ├── DevolucionRequest.java # Entrada: acta de devolución
+│   │   ├── EquipoItem.java        # Equipo (marca, tipo, modelo, serial, inventario, estado)
+│   │   ├── HardwareItem.java      # Hardware entrega (tipo, descripcion, programa)
+│   │   └── OtroElementoItem.java  # Otros elementos devolución (solo tipo)
 │   └── response/
-│       ├── ActaResponse.java      # Respuesta: success + nombre_zip
+│       ├── ActaResponse.java      # Respuesta: success + nombre_zip + mensaje
 │       ├── ErrorResponse.java     # Respuesta: success + mensaje
-│       └── EquipoResponse.java    # Respuesta GLPI: marca, tipo, modelo
+│       ├── EquipoResponse.java    # Equipo GLPI: marca, tipo, modelo
+│       └── UsuarioResponse.java   # Usuario GLPI: id, nombreCompleto
 ├── exception/
-│   └── GlobalExceptionHandler.java # Captura errores y los convierte en JSON
+│   └── GlobalExceptionHandler.java # Convierte errores de validación en JSON (400)
 └── service/
-    ├── ActaService.java           # Orquestador: acta + checklist → ZIP
-    ├── DevolucionService.java     # Orquestador: devolución → ZIP
+    ├── ActaService.java           # Orquesta: acta + checklist → ZIP
+    ├── DevolucionService.java     # Orquesta: devolución → ZIP
     ├── DocumentoWordService.java  # Prepara datos y genera los DOCX
     ├── DocxTemplateEngine.java    # Reemplaza {{ vars }} en templates Word
-    ├── EquipoService.java         # Consulta GLPI por serial
+    ├── EquipoService.java         # Consulta equipos en GLPI por serial
+    ├── UsuarioService.java        # Consulta usuarios en GLPI por nombre
+    ├── GlpiClient.java            # Cliente HTTP compartido para GLPI
     └── ZipService.java            # Empaqueta DOCX en ZIP
 ```
 
@@ -69,35 +88,67 @@ com.empresa.actas/
 
 ```mermaid
 graph TD
-    A[Controller] -->|Recibe request| B[Service]
+    A[Controller] -->|Recibe request y valida @Valid| B[Service]
     B -->|Prepara datos| C[DocumentoWordService]
     C -->|Procesa template| D[DocxTemplateEngine]
-    B -->|Empaqueta| E[ZipService]
-    B -->|Consulta GLPI| F[EquipoService]
-    A -->|Valida| G[GlobalExceptionHandler]
+    B -->|Empaqueta DOCX| E[ZipService]
+    B -->|Consulta GLPI| F[EquipoService / UsuarioService]
+    F -->|Autentica y busca| G[GlpiClient]
+    A -->|Errores de validación| H[GlobalExceptionHandler]
 ```
 
-**Controller** — Recibe peticiones HTTP, valida con `@Valid`, delega a Service.
+**Controller** — Recibe peticiones HTTP, valida con `@Valid`, delega en el Service.
 
 **Service** — Orquesta la generación: convierte DTOs a mapas, coordina Word y ZIP.
 
-**DocumentoWordService** — Prepara los datos (fecha indexada, hardware/equipos indexados) y llama al motor de templates.
+**DocumentoWordService** — Prepara los datos (fecha indexada, hardware/equipos indexados, checkboxes) y llama al motor de templates.
 
 **DocxTemplateEngine** — Motor de reemplazo de placeholders a nivel de run en documentos Word.
 
-**EquipoService** — Integra con la API REST de GLPI para buscar equipos por serial.
+**EquipoService / UsuarioService** — Integran con GLPI vía `GlpiClient`.
 
-**ZipService** — Empaqueta archivos DOCX en un solo ZIP para descarga.
+**GlpiClient** — Centraliza la autenticación (App-Token + User-Token → session) y el `HttpClient`.
 
-### Puerto del servidor
+**ZipService** — Empaqueta los DOCX en un ZIP para descarga.
 
-| Configuración | Puerto |
-|---------------|--------|
+### Configuración y puertos
+
+| Configuración | Valor |
+|---------------|-------|
 | Backend Spring Boot | `8001` |
-| Frontend (Live Server) | `5500` |
-| Frontend (navegador directo) | `N/A` |
+| Frontend (Live Server VS Code) | `5501` |
+| Orígenes CORS permitidos | `127.0.0.1`/`localhost` en puertos `80`, `5500`, `5501`, `8080` |
 
-> **IMPORTANTE:** El frontend está hardcodeado a `http://127.0.0.1:8001`. El backend siempre debe ejecutarse en el puerto 8001.
+> **IMPORTANTE:** El frontend define la URL del backend en `frontend/js/config.js` (`API_URL = "http://127.0.0.1:8001"`). El backend siempre debe ejecutarse en el puerto 8001.
+
+### Variables de entorno
+
+Cargadas desde `.env` (raíz del proyecto) por `AppConfig`, o desde variables del sistema (estas tienen prioridad):
+
+| Variable | Obligatoria | Descripción |
+|----------|-------------|-------------|
+| `GLPI_URL` | No (hay fallback) | URL base de la API REST de GLPI |
+| `GLPI_APP_TOKEN` | **Sí** | App-Token de la aplicación GLPI |
+| `GLPI_USER_TOKEN` | **Sí** | User-Token del usuario de la API |
+
+Propiedades de `application.yml`:
+
+```yaml
+server:
+  port: 8001
+
+glpi:
+  url: ${GLPI_URL:http://10.86.1.33/glpi/apirest.php}
+  app-token: ${GLPI_APP_TOKEN}      # sin fallback → obligatorio
+  user-token: ${GLPI_USER_TOKEN}    # sin fallback → obligatorio
+
+app:
+  generated-dir: ${java.io.tmpdir}/actas_glpi_generados
+  templates-dir: classpath:plantillas
+```
+
+- `app.generated-dir`: directorio donde se guardan los DOCX/ZIP generados (sobrescribible con la propiedad de Spring del mismo nombre).
+- `app.templates-dir`: `classpath:plantillas` usa las plantillas dentro de `resources/plantillas`.
 
 ## Frontend
 
@@ -106,35 +157,44 @@ graph TD
 ```
 frontend/
 ├── css/
-│   ├── styles.css          # Estilos custom (navbar, cards, checklist, etc.)
-│   ├── output.css          # CSS generado por Tailwind
-│   └── app.css             # Estilos adicionales
+│   ├── styles.css          # Estilos custom (navbar, cards, autocomplete, toasts, etc.)
+│   ├── output.css          # CSS compilado (Tailwind + FlyonUI), versionado
+│   └── app.css             # Fuente Tailwind/FlyonUI (se compila con npm run build:css)
 ├── js/
-│   ├── ui.js               # Utilidades compartidas (mostrarMensaje)
+│   ├── config.js           # API_URL (carga primero en los HTML)
+│   ├── ui.js               # Utilidades compartidas (toasts)
+│   ├── autocomplete.js     # Autocompletado de usuarios GLPI
 │   ├── app.js              # Lógica acta de entrega
 │   └── devolucion.js       # Lógica acta de devolución
 ├── pages/
-│   ├── acta-entrega.html   # Página de acta de entrega
-│   └── acta-devolucion.html # Página de acta de devolución
-└── package.json            # Dependencias (Tailwind, FlyonUI)
+│   ├── acta-entrega.html
+│   └── acta-devolucion.html
+├── img/logo.png
+└── package.json            # Tailwind CSS + FlyonUI (build:css)
 ```
 
 ### Arquitectura de JavaScript
 
-Cada página tiene su propio archivo JS que carga después de `ui.js`:
+Cada página carga `config.js` y `ui.js` primero, y luego su lógica específica:
 
 ```
-ui.js              (compartido, carga primero)
-    ↓
-app.js             (entrega)
-   — o —
-devolucion.js      (devolución)
+config.js → ui.js → autocomplete.js → app.js (entrega)
+                                    → devolucion.js (devolución)
 ```
 
-**Separación de responsabilidades:**
+- `config.js` — Define `API_URL`. Debe cargarse antes que el resto de scripts.
+- `ui.js` — Presentación (notificaciones toast).
+- `autocomplete.js` — Busca usuarios en GLPI (`GET /usuarios`) y autocompleta los campos de personas.
+- `app.js` / `devolucion.js` — Validación, construcción del payload y descarga.
 
-- `ui.js` — Funciones de presentación (notificaciones).
-- `app.js` / `devolucion.js` — Lógica específica de cada tipo de acta.
+### Autocompletado de usuarios
+
+Se aplica a los campos de personas (mínimo **3 caracteres**):
+
+| Página | Campos con autocompletado |
+|--------|---------------------------|
+| Acta de Entrega | `entregado_a`, `entregado_por` |
+| Acta de Devolución | `entregado_por`, `recibido_por` |
 
 ### Componentes UI
 
@@ -142,14 +202,15 @@ devolucion.js      (devolución)
 |------------|-------------|
 | Navbar | Navegación entre acta de entrega y devolución |
 | Formulario de datos | Campos obligatorios del acta |
-| Bloques dinámicos | Equipos y hardware, agregados/eliminados dinámicamente |
+| Bloques dinámicos | Equipos y hardware/otros, agregados/eliminados dinámicamente |
 | Checklist | 36 checkboxes organizados en 6 secciones con acordeones |
 | Selector de SO | Radio buttons para Windows 10, Windows 11, Mac OS |
-| Botón generar | Envía POST y descarga ZIP |
+| Autocompletado | Sugerencias de usuarios desde GLPI |
+| Botón generar | Envía POST y descarga el ZIP |
 
 ## Integración con GLPI
 
-### Flujo de consulta
+### Flujo de consulta de equipo
 
 ```mermaid
 sequenceDiagram
@@ -162,27 +223,53 @@ sequenceDiagram
     G-->>B: session_token
     B->>G: GET /search/Computer?criteria[0][field]=5&...[value]={serial}
     G-->>B: { count, data: [{23: marca, 4: tipo, 40: modelo, 17: cpu}] }
-    B->>B: Abreviar CPU (ej: "Core i5")
+    B->>B: Abreviar CPU (ej: "Core(TM) i5-12400" → "Core i5")
+    B->>B: modeloActa = modelo + " " + sufijoCpu
     B-->>U: { marca, tipo, modelo }
 ```
 
-### Campos GLPI consultados
+### Campos GLPI consultados (Computer)
 
 | Campo GLPI | Descripción | Uso en acta |
 |------------|-------------|-------------|
-| `5` | Serial (filtro de búsqueda) | Búsqueda del equipo |
+| `5` | Serial (filtro, búsqueda `contains`) | Búsqueda del equipo |
 | `23` | Fabricante | Marca del equipo |
 | `4` | Tipo de equipo | Tipo (Desktop, Laptop, etc.) |
 | `40` | Modelo | Modelo del equipo |
 | `17` | Procesador | Sufijo del modelo (ej: "Core i5") |
 
+### Flujo de consulta de usuarios
+
+```mermaid
+sequenceDiagram
+    participant U as Frontend
+    participant B as Backend
+    participant G as GLPI
+
+    U->>B: GET /usuarios?texto=juan (autocompletado, mín. 3 caracteres)
+    B->>G: POST /initSession
+    G-->>B: session_token
+    B->>G: GET /search/User?criteria[0][field]=9 OR [field]=34 (contains)
+    G-->>B: { data: [{2: id, 9: firstname, 34: realname}] }
+    B->>B: Construir nombreCompleto = firstname + " " + realname
+    B-->>U: [{ id, nombreCompleto }] (máx. 10 resultados)
+```
+
+### Campos GLPI consultados (User)
+
+| Campo GLPI | Descripción |
+|------------|-------------|
+| `9` | firstname (nombres) |
+| `34` | realname (apellidos) |
+| `2` | ID del usuario (se solicita con `forcedisplay`, GLPI no lo incluye por defecto) |
+
 ### Autenticación
 
-GLPI utiliza dos tokens:
-- **App-Token** — Token de aplicación (identifica la app).
-- **User-Token** — Token de usuario (identifica al usuario).
+GLPI usa dos tokens:
+- **App-Token** — Identifica la aplicación.
+- **User-Token** — Identifica al usuario de la API.
 
-Ambos se cargan desde el archivo `.env` y se inyectan como `@Value` en `EquipoService`.
+`GlpiClient.iniciarSesion()` llama a `/initSession` y obtiene un `session_token` que se usa en las siguientes peticiones. Si la respuesta no es 2xx, `search()` lanza una excepción. Los servicios la capturan y devuelven resultados vacíos.
 
 ## Generación de documentos Word
 
@@ -208,20 +295,20 @@ El motor reemplaza placeholders en formato `{{ nombre_variable }}` dentro de arc
 | Template | Generado por | Contenido |
 |----------|-------------|-----------|
 | `Acta de Entrega 2 2 - copia.docx` | `generarActa()` | Acta de entrega con equipos y hardware |
-| `ListaChequeo.docx` | `generarChecklist()` | 36 ítems de verificación + SO |
-| `ActaDevolucion.docx` | `generarDevolucion()` | Acta de devolución con estado de equipos |
+| `ListaChequeo.docx` | `generarChecklist()` | 36 ítems de verificación + SO + primer equipo |
+| `ActaDevolucion.docx` | `generarDevolucion()` | Acta de devolución con estado de equipos y otros elementos |
 
 ### Variables de templates
 
-**Variables indexadas:**
+**Variables indexadas (el servicio las rellena hasta el límite del template, aunque el frontend envíe menos):**
 
-| Prefijo | Cantidad | Campos | Ejemplo |
-|---------|----------|--------|---------|
-| `eq_N_` | 10 | marca, tipo, modelo, serial, inventario | `eq_1_marca = "Dell"` |
-| `hw_N_` | 11 | tipo, descripcion, programa | `hw_1_tipo = "Monitor"` |
-| `ot_N_` | 10 | tipo | `ot_1_tipo = "Teclado"` |
-| `chk_N_si/no` | 36 | (cuadrado marcado/desmarcado) | `chk_1_si = "■"` |
-| `win10/win11/macos` | 1 | (cuadrado) | `win10 = "■"` |
+| Prefijo | Máx. | Campos | Uso |
+|---------|------|--------|-----|
+| `eq_N_` | 10 | marca, tipo, modelo, serial, inventario (+ `estado` en devolución) | Acta entrega / devolución |
+| `hw_N_` | 11 | tipo, descripcion, programa | Acta entrega (hardware) |
+| `ot_N_` | 10 | tipo | Acta devolución (otros elementos) |
+| `chk_N_si` / `chk_N_no` | 36 | `"X"` o `""` según marcado | Checklist |
+| `win10` / `win11` / `macos` | 1 | `"X"` si coincide el SO | Checklist |
 
 **Variables de fecha:**
 
@@ -231,6 +318,19 @@ El motor reemplaza placeholders en formato `{{ nombre_variable }}` dentro de arc
 | `mes` | `MM` | `07` |
 | `anio` | `yyyy` | `2026` |
 
+**Otras variables:**
+
+| Variable | Valor |
+|----------|-------|
+| `responsable_verificacion` | Igual a `entregado_por` (checklist) |
+
+### Límites por tipo de acta
+
+| Acta | Equipos (frontend) | Hardware / Otros (frontend) | Límite template (backend) |
+|------|--------------------|-----------------------------|---------------------------|
+| Entrega | 3 | 9 (hardware/software) | 10 equipos, 11 hardware |
+| Devolución | 3 | 3 (otros elementos) | 10 equipos, 10 otros |
+
 ## Proceso de descarga ZIP
 
 ```mermaid
@@ -239,70 +339,51 @@ sequenceDiagram
     participant B as Backend
 
     U->>B: POST /generar-acta
-    B->>B: Generar DOCX 1 (acta)
-    B->>B: Generar DOCX 2 (checklist)
+    B->>B: Generar DOCX acta
+    B->>B: Generar DOCX checklist
     B->>B: Crear ZIP con ambos DOCX
     B-->>U: { success, nombre_zip: "ActaLista_12345_Operacion.zip" }
 
     U->>B: GET /descargar-acta/ActaLista_12345_Operacion.zip
-    B-->>U: Archivo ZIP (APPLICATION_OCTET_STREAM)
-    U->>U: Descarga automática vía <a> click
+    B-->>U: Archivo ZIP (Content-Type application/octet-stream)
+    U->>U: Descarga automática vía <a> con attribute download
 ```
 
-El frontend crea dinámicamente un elemento `<a>` con `download` attribute para forzar la descarga, luego lo elimina del DOM.
+El frontend crea dinámicamente un elemento `<a>` con el atributo `download`, hace clic y lo elimina del DOM.
 
 ## Validaciones
 
 ### Backend (Jakarta Validation)
 
-Validación automática al recibir el request en el controller:
+La validación se aplica con `@Valid` en los controllers; los errores se capturan en `GlobalExceptionHandler` y devuelven HTTP 400 con `ErrorResponse`.
 
 | DTO | Campo | Regla |
 |-----|-------|-------|
-| `ActaRequest` | fecha | `@NotBlank` |
-| `ActaRequest` | entregado_a | `@NotBlank` |
-| `ActaRequest` | cargo_recibe | `@NotBlank` |
-| `ActaRequest` | entregado_por | `@NotBlank` |
-| `ActaRequest` | cargo_entrega | `@NotBlank` |
-| `ActaRequest` | asunto | `@NotBlank` |
-| `ActaRequest` | numero_sac | `@NotBlank` |
-| `ActaRequest` | sistema_operativo | `@NotBlank` |
+| `ActaRequest` | fecha, entregado_a, cargo_recibe, entregado_por, cargo_entrega, asunto, numero_sac, sistema_operativo | `@NotBlank` |
 | `DevolucionRequest` | fecha | `@NotBlank` |
 
-Los errores de validación se capturan en `GlobalExceptionHandler` y retornan HTTP 400 con `ErrorResponse`.
+> El resto de campos de la devolución se validan en el frontend (comportamiento actual).
 
 ### Frontend (JavaScript)
 
 | Validación | Ámbito | Comportamiento |
 |------------|--------|----------------|
-| Campos obligatorios | Ambos formularios | Clase `is-invalid` + scroll automático + foco |
+| Campos obligatorios | Ambos formularios | Clase `is-invalid` + scroll al primer error + foco |
 | Sistema operativo | Solo entrega | Radio buttons con clase `radio-so-error` |
-| Serial del equipo | Ambos formularios | Requerido para cada equipo |
-| Inventario del equipo | Ambos formularios | Requerido para cada equipo |
-| Estado del equipo | Solo devolución | Requerido para cada equipo |
+| Serial e inventario del equipo | Ambos formularios | Obligatorios por equipo |
+| Estado del equipo | Solo devolución | Obligatorio por equipo |
 | Mínimo 1 equipo | Ambos formularios | No se puede eliminar el último |
-| Máximo 11 hardware | Ambos formularios | Límite de registros |
-| Máximo 10 equipos | Backend (silencioso) | Se ignoran equipos adicionales |
-| Máximo 10 equipos GLPI | Backend (silencioso) | Solo se procesan los primeros 10 |
+| Máx. 3 equipos | Ambos formularios | Mensaje de límite |
+| Máx. 9 hardware | Solo entrega | Mensaje de límite |
+| Máx. 3 otros elementos | Solo devolución | Mensaje de límite |
 
-## Configuración
+## CORS
 
-### application.yml
+`CorsConfig` permite peticiones desde:
 
-```yaml
-server:
-  port: 8001
+- `http://127.0.0.1` y `http://localhost` (puerto 80)
+- `http://127.0.0.1:5500` y `http://localhost:5500` (Live Server)
+- `http://127.0.0.1:5501` y `http://localhost:5501` (Live Server, puerto actual del proyecto)
+- `http://127.0.0.1:8080` y `http://localhost:8080` (servidor alternativo)
 
-glpi:
-  url: ${GLPI_URL:http://10.86.1.33/glpi/apirest.php}
-  app-token: ${GLPI_APP_TOKEN:...}
-  user-token: ${GLPI_USER_TOKEN:...}
-
-app:
-  generated-dir: ${java.io.tmpdir}/actas_glpi_generados
-  templates-dir: classpath:plantillas
-```
-
-### CORS
-
-Permite orígenes: `127.0.0.1`, `localhost` en puertos 80, 5500 y 8080. Expone el header `Content-Disposition` para descarga de archivos.
+Expone el header `Content-Disposition` para la descarga de archivos.

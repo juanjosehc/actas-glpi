@@ -79,7 +79,7 @@ public class DevolucionService {
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            return ActaResponse.error("Error generando devolucion: " + e.getMessage());
+            return ActaResponse.error("Error generando devolución: " + e.getMessage());
         }
     }
 }

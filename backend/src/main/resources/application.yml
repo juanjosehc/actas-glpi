@@ -4,20 +4,12 @@
 #
 # Puertos, CORS y paths se configuran aquí.
 # Variables de entorno se cargan desde .env via AppConfig.
-# El frontend está hardcodeado a http://127.0.0.1:8001.
+# La URL base del frontend se define en frontend/js/config.js (API_URL).
 
 # --- Servidor ---
-# Puerto del backend. DEBE ser 8001 (el frontend lo tiene hardcodeado).
+# Puerto del backend. DEBE coincidir con API_URL de frontend/js/config.js.
 server:
   port: 8001
-
-# --- Spring ---
-# Límites de upload (no se usa actualmente, pero se mantiene por si acaso).
-spring:
-  servlet:
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
 
 # --- Integración GLPI ---
 # URL base de la instancia GLPI (sin barra al final).

@@ -81,7 +81,7 @@ public class ActaService {
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            return ActaResponse.error("Error generando documentacion: " + e.getMessage());
+            return ActaResponse.error("Error generando documentación: " + e.getMessage());
         }
     }
 }
