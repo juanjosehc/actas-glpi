@@ -225,7 +225,7 @@ async function generarDevolucion() {
         };
 
         const response = await fetch(
-            "http://127.0.0.1:8001/generar-devolucion",
+            API_URL + "/generar-devolucion",
             {
                 method: "POST",
                 headers: {
@@ -265,7 +265,7 @@ async function generarDevolucion() {
         );
 
         const descargaResponse = await fetch(
-            "http://127.0.0.1:8001/descargar-acta/" +
+            API_URL + "/descargar-acta/" +
             result.nombre_zip
         );
 
@@ -732,7 +732,7 @@ async function buscarEquipoBloque(bloque) {
     try {
 
         const response =
-            await fetch(`http://127.0.0.1:8001/equipo/${serial}`);
+            await fetch(`${API_URL}/equipo/${serial}`);
 
         if (!response.ok) {
             throw new Error("Respuesta no válida del servidor");
