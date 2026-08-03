@@ -35,6 +35,16 @@ Flujo principal:
 ====================================================
 */
 
+/*
+----------------------------------------------------
+LÍMITES DE REGISTROS (capacidad de plantillas DOCX)
+----------------------------------------------------
+*/
+const MAX_EQUIPOS = 3;
+const MAX_HARDWARE = 3;
+const MSG_MAX_EQUIPOS = "Se alcanzó el máximo permitido de 3 equipos.";
+const MSG_MAX_HARDWARE = "Se alcanzó el máximo permitido de 3 registros de Otros Equipos.";
+
 /**
  * Genera el acta de devolución.
  *
@@ -91,11 +101,6 @@ async function generarDevolucion() {
                 primerCampoInvalido.focus();
             }, 300);
 
-            mostrarMensaje(
-                "Complete los campos obligatorios",
-                "error"
-            );
-
             return;
         }
 
@@ -109,11 +114,6 @@ async function generarDevolucion() {
             setTimeout(() => {
                 errorEquipo.elemento.focus();
             }, 300);
-
-            mostrarMensaje(
-                `Debe completar: ${errorEquipo.nombre}`,
-                "error"
-            );
 
             return;
         }
@@ -182,11 +182,6 @@ async function generarDevolucion() {
                 "fecha"
             ).value
         ) {
-
-            mostrarMensaje(
-                "Debe seleccionar una fecha",
-                "error"
-            );
 
             return;
 
@@ -381,6 +376,20 @@ document.addEventListener("DOMContentLoaded", () => {
         allowInput: true
     });
 
+    const entregadoPor =
+        document.getElementById("entregado_por");
+
+    const recibidoPor =
+        document.getElementById("recibido_por");
+
+    if (entregadoPor) {
+        initAutocomplete(entregadoPor);
+    }
+
+    if (recibidoPor) {
+        initAutocomplete(recibidoPor);
+    }
+
 });
 
 /*
@@ -394,8 +403,8 @@ ADMINISTRACIÓN DINÁMICA DE HARDWARE (OTROS ELEMENTOS)
  *
  * En devolución solo se captura el tipo de hardware
  * (sin descripción ni programa como en entrega).
- * Límite máximo: 11 registros. No se permite eliminar
- * el último registro existente.
+ * Límite máximo: 3 registros (capacidad de la plantilla DOCX).
+ * No se permite eliminar el último registro existente.
  */
 function agregarHardware() {
 
@@ -403,12 +412,12 @@ function agregarHardware() {
         document.getElementById("hardware-container");
 
     if (
-        container.querySelectorAll(".hardware-item").length >= 11
+        container.querySelectorAll(".hardware-item").length >= MAX_HARDWARE
     ) {
 
         mostrarMensaje(
-            "Máximo 11 registros",
-            "error"
+            MSG_MAX_HARDWARE,
+            "warning"
         );
 
         return;
@@ -475,7 +484,7 @@ function agregarHardware() {
 
                 mostrarMensaje(
                     "Debe existir al menos un hardware",
-                    "error"
+                    "warning"
                 );
 
                 return;
@@ -508,12 +517,25 @@ ADMINISTRACIÓN DINÁMICA DE EQUIPOS
  * modelo, inventario y estado. Marca/tipo/modelo se
  * autocompletan desde GLPI al hacer click en "Buscar".
  * Se validan serial, inventario y estado antes de enviar.
+ * Límite máximo: 3 equipos (capacidad de la plantilla DOCX).
  * Límite mínimo: 1 equipo (no se puede eliminar el último).
  */
 function agregarEquipo() {
 
     const container =
         document.getElementById("equipos-container");
+
+    if (
+        container.querySelectorAll(".equipo-item").length >= MAX_EQUIPOS
+    ) {
+
+        mostrarMensaje(
+            MSG_MAX_EQUIPOS,
+            "warning"
+        );
+
+        return;
+    }
 
     const numeroEquipo =
         container.querySelectorAll(".equipo-item").length + 1;
@@ -678,7 +700,7 @@ function agregarEquipo() {
 
                 mostrarMensaje(
                     "Debe existir al menos un equipo",
-                    "error"
+                    "warning"
                 );
 
                 return;
@@ -707,20 +729,48 @@ async function buscarEquipoBloque(bloque) {
     const serial =
         bloque.querySelector("[data-serial]").value;
 
-    const response =
-        await fetch(`http://127.0.0.1:8001/equipo/${serial}`);
+    try {
 
-    const data =
-        await response.json();
+        const response =
+            await fetch(`http://127.0.0.1:8001/equipo/${serial}`);
 
-    bloque.querySelector("[data-marca]").value =
-        data.marca ?? "";
+        if (!response.ok) {
+            throw new Error("Respuesta no válida del servidor");
+        }
 
-    bloque.querySelector("[data-tipo]").value =
-        data.tipo ?? "";
+        const data =
+            await response.json();
 
-    bloque.querySelector("[data-modelo]").value =
-        data.modelo ?? "";
+        bloque.querySelector("[data-marca]").value =
+            data.marca ?? "";
+
+        bloque.querySelector("[data-tipo]").value =
+            data.tipo ?? "";
+
+        bloque.querySelector("[data-modelo]").value =
+            data.modelo ?? "";
+
+        if (
+            data.marca ||
+            data.tipo ||
+            data.modelo
+        ) {
+
+            mostrarMensaje(
+                "Equipo encontrado correctamente",
+                "success"
+            );
+
+        }
+
+    } catch (error) {
+
+        mostrarMensaje(
+            "Error al consultar información del equipo",
+            "error"
+        );
+
+    }
 
 }
 

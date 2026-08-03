@@ -2,14 +2,8 @@ package com.empresa.actas.service;
 
 import com.empresa.actas.dto.response.EquipoResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -19,11 +13,13 @@ import java.util.regex.Pattern;
  * Servicio de integración con la API de GLPI para consultar equipos.
  *
  * Flujo de búsqueda:
- * 1. Iniciar sesión en GLPI con App-Token y User-Token.
+ * 1. Iniciar sesión en GLPI con App-Token y User-Token (vía GlpiClient).
  * 2. Construir query de búsqueda con el serial del equipo.
  * 3. Extraer marca (field 23), tipo (field 4), modelo (field 40) y procesador (field 17).
  * 4. Abreviar el nombre del procesador (ej: "Core(TM) i5-12400" → "Core i5").
  * 5. Concatenar modelo + sufijo CPU para el acta.
+ *
+ * La autenticación y el HttpClient son compartidos a través de GlpiClient.
  *
  * Campos GLPI:
  * - Field 23: Fabricante (marca).
@@ -34,17 +30,11 @@ import java.util.regex.Pattern;
 @Service
 public class EquipoService {
 
-    @Value("${glpi.url}")
-    private String glpiUrl;
+    private final GlpiClient glpiClient;
 
-    @Value("${glpi.app-token}")
-    private String appToken;
-
-    @Value("${glpi.user-token}")
-    private String userToken;
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    public EquipoService(GlpiClient glpiClient) {
+        this.glpiClient = glpiClient;
+    }
 
     /**
      * Busca un equipo en GLPI por su número de serial.
@@ -54,10 +44,7 @@ public class EquipoService {
      */
     public EquipoResponse buscarEquipo(String serial) {
         try {
-            String sessionToken = iniciarSesion();
-
-            String url = glpiUrl + "/search/Computer"
-                    + "?criteria[0][field]=5"
+            String query = "?criteria[0][field]=5"
                     + "&criteria[0][searchtype]=contains"
                     + "&criteria[0][value]=" + serial
                     + "&forcedisplay[0]=23"
@@ -65,19 +52,7 @@ public class EquipoService {
                     + "&forcedisplay[2]=40"
                     + "&forcedisplay[3]=17";
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .header("App-Token", appToken)
-                    .header("Session-Token", sessionToken)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(
-                    request,
-                    HttpResponse.BodyHandlers.ofString()
-            );
-
-            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode root = glpiClient.search("Computer", query);
             int count = root.path("count").asInt(0);
 
             if (count == 0) {
@@ -115,29 +90,6 @@ public class EquipoService {
         } catch (Exception e) {
             return new EquipoResponse("", "", "");
         }
-    }
-
-    /**
-     * Inicia sesión en la API de GLPI y retorna el session token.
-     *
-     * @return Session token para las siguientes peticiones.
-     * @throws Exception Si hay error de conexión o autenticación.
-     */
-    private String iniciarSesion() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(glpiUrl + "/initSession"))
-                .header("App-Token", appToken)
-                .header("Authorization", "user_token " + userToken)
-                .GET()
-                .build();
-
-        HttpResponse<String> response = httpClient.send(
-                request,
-                HttpResponse.BodyHandlers.ofString()
-        );
-
-        JsonNode root = objectMapper.readTree(response.body());
-        return root.path("session_token").asText();
     }
 
     /**
