@@ -13,6 +13,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * - http://localhost        → Variante localhost.
  * - http://127.0.0.1:5500  → Live Server de VS Code.
  * - http://localhost:5500   → Live Server de VS Code (variante).
+ * - http://127.0.0.1:5501  → Live Server de VS Code (puerto actual del frontend).
+ * - http://localhost:5501   → Live Server de VS Code (variante, puerto actual del frontend).
  * - http://127.0.0.1:8080   → Servidor alternativo.
  * - http://localhost:8080    → Servidor alternativo (variante).
  *
@@ -34,6 +36,8 @@ public class CorsConfig {
                                 "http://localhost",
                                 "http://127.0.0.1:5500",
                                 "http://localhost:5500",
+                                "http://127.0.0.1:5501",
+                                "http://localhost:5501",
                                 "http://127.0.0.1:8080",
                                 "http://localhost:8080"
                         )
