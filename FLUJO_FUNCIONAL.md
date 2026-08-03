@@ -160,8 +160,6 @@ flowchart LR
         A6[Cargo quien recibe]
         A7[Area quien recibe]
         A8[Motivo devolucion]
-        A9[Nombre jefe inmediato]
-        A10[Cargo jefe inmediato]
     end
 
     subgraph Equi["Equipos"]
@@ -178,7 +176,7 @@ flowchart LR
 
 > **Nota:** El campo **Estado** existe unicamente en el flujo de devolucion. El bloque **Otros Elementos** solo solicita el tipo de elemento y no incluye descripcion.
 
-**Campos obligatorios:** Fecha, Nombre quien entrega, Cedula, Cargo quien entrega, Recibido por, Cargo quien recibe, Area quien recibe, Motivo, Nombre jefe, Cargo jefe.
+**Campos obligatorios:** Fecha, Nombre quien entrega, Cedula, Cargo quien entrega, Recibido por, Cargo quien recibe, Area quien recibe, Motivo.
 
 **Campos obligatorios por equipo:** Serial, Inventario, **Estado**.
 
@@ -414,7 +412,7 @@ flowchart TD
 
 Mismo flujo que entrega, con estas diferencias:
 
-- **Campos obligatorios diferentes:** Incluye cedula, area, motivo, nombre y cargo jefe.
+- **Campos obligatorios diferentes:** Incluye cedula, area y motivo.
 - **Sin validacion de SO:** No hay sistema operativo.
 - **Validacion de equipo incluye Estado:** Serial, Inventario y Estado son obligatorios.
 - **Sin checklist:** Se omite toda la seccion de verificacion.
@@ -434,8 +432,6 @@ Mismo flujo que entrega, con estas diferencias:
 | Cédula | No | Si | Si |
 | Área quien recibe | No | Si | Si |
 | Motivo | No | Si | Si |
-| Nombre jefe | No | Si | Si |
-| Cargo jefe | No | Si | Si |
 | Serial equipo | Si | Si | Si |
 | Inventario equipo | Si | Si | Si |
 | Estado equipo | No | Si | Si |

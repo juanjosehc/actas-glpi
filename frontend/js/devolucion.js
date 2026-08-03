@@ -17,8 +17,6 @@ Diferencias con entrega:
 - Incluye campo "Estado" por cada equipo (obligatorio).
 - No incluye checklist ni sistema operativo.
 - No incluye hardware detallado (solo tipo).
-- Incluye campos de jefe directo (nombre + cargo).
-
 Endpoints utilizados:
 
 - GET  /equipo/{serial}          → Consulta equipo en GLPI por serial.
@@ -44,7 +42,7 @@ Flujo principal:
  * 1. Validar campos obligatorios (fecha, entregado_por, cedula, etc.).
  * 2. Validar que cada equipo tenga serial, inventario y estado.
  * 3. Construir objetos de hardware y equipos.
- * 4. Armar el payload completo con campos de jefe directo.
+ * 4. Armar el payload completo.
  * 5. Enviar POST a /generar-devolucion.
  * 6. Descargar el ZIP resultante vía /descargar-acta.
  */
@@ -61,9 +59,7 @@ async function generarDevolucion() {
             "recibido_por",
             "cargo_recibe",
             "area_recibe",
-            "motivo",
-            "nombre_jefe",
-            "cargo_jefe"
+            "motivo"
 
         ];
 
@@ -221,12 +217,6 @@ async function generarDevolucion() {
 
             motivo:
                 document.getElementById("motivo")?.value || "",
-
-            nombre_jefe:
-                document.getElementById("nombre_jefe")?.value || "",
-
-            cargo_jefe:
-                document.getElementById("cargo_jefe")?.value || "",
 
             hardware:
                 hardware,

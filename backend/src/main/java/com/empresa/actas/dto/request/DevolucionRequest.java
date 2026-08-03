@@ -14,7 +14,6 @@ import java.util.List;
  * Diferencias con ActaRequest:
  * - No incluye checklist ni sistema operativo.
  * - No incluye hardware detallado (solo tipo).
- * - Incluye campos de jefe directo (nombre + cargo).
  * - Incluye campo cedula del entregador.
  *
  * Solo fecha es obligatoria con @NotBlank; los demás campos
@@ -39,10 +38,6 @@ public class DevolucionRequest {
     private String motivo = "";
 
     private String cargo_entrega = "";
-
-    private String nombre_jefe = "";
-
-    private String cargo_jefe = "";
 
     private List<EquipoItem> equipos = new ArrayList<>();
 
