@@ -131,6 +131,10 @@ button{
 
     margin-bottom: 16px;
 
+    flex-wrap: wrap;
+
+    gap: 12px;
+
 }
 
 #acciones-section {
@@ -866,4 +870,33 @@ textarea {
     color: #64748B;
     font-style: italic;
     cursor: default;
+}
+
+/* =========================
+   RESPONSIVE - BOTONES EN CARDS
+   ========================= */
+
+@media (max-width: 768px) {
+    .section-header {
+        justify-content: flex-start;
+    }
+
+    .section-header .card-title {
+        flex: 1 0 100%;
+        margin: 0;
+    }
+
+    .section-header button {
+        flex-shrink: 0;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .section-header button {
+        width: 100%;
+        padding: 10px;
+        font-size: 0.85rem;
+    }
 }
