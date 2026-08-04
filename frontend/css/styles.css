@@ -107,6 +107,12 @@ button{
 
 }
 
+@media screen and (max-width: 1024px) {
+    #acta-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 #checklist-section {
 
     margin-top: 20px;
