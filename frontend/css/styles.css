@@ -95,7 +95,8 @@ button{
 }
 
 
-#acta-layout {
+#acta-layout,
+#acta-formateo-layout {
 
     display: grid;
 
@@ -107,34 +108,23 @@ button{
 
 }
 
-@media screen and (max-width: 1024px) {
-    #acta-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
 #acta-formateo-layout {
-
-    display: grid;
 
     grid-template-columns:
         1fr
         1fr;
-    gap: 20px;
+
+    max-width: 1200px;
+
+    margin: 0 auto;
 
 }
 
 @media screen and (max-width: 1024px) {
+    #acta-layout,
     #acta-formateo-layout {
         grid-template-columns: 1fr;
     }
-}
-
-/* Formateo Seguro: cards de igual ancho, un poco más angostas que el
-   ancho total y centradas. Conserva la altura y el scroll heredados. */
-#acta-formateo-layout {
-    max-width: 1200px;
-    margin: 0 auto;
 }
 
 #checklist-section {
@@ -900,6 +890,17 @@ textarea {
     color: #64748B;
     font-style: italic;
     cursor: default;
+}
+
+.autocomplete-nombre {
+    display: block;
+}
+
+.autocomplete-login {
+    display: block;
+    font-size: 0.75rem;
+    color: #64748B;
+    margin-top: 2px;
 }
 
 /* =========================

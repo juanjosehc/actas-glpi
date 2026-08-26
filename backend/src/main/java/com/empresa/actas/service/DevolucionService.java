@@ -4,6 +4,8 @@ import com.empresa.actas.dto.request.DevolucionRequest;
 import com.empresa.actas.dto.response.ActaResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,9 @@ import java.util.Map;
  */
 @Service
 public class DevolucionService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(DevolucionService.class);
 
     @Value("${app.generated-dir}")
     private String generatedDir;
@@ -79,7 +84,8 @@ public class DevolucionService {
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            return ActaResponse.error("Error generando devolución: " + e.getMessage());
+            log.error("Error generando acta de devolución", e);
+            return ActaResponse.error("Error generando devolución");
         }
     }
 }

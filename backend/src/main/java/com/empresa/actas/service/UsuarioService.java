@@ -38,11 +38,21 @@ public class UsuarioService {
     }
 
     /**
-     * Busca usuarios en GLPI cuyo firstname o realname
-     * contenga el texto indicado.
+     * Busca usuarios en GLPI por términos, sobre firstname,
+     * realname y login (campo name).
+     *
+     * Estrategia multi-término:
+     * - El texto se separa en términos (split por espacios).
+     * - Cada término debe aparecer en firstname, realname o login
+     *   (criterios encadenados con OR dentro del grupo del término).
+     * - Los grupos de términos se combinan con AND.
+     *
+     * Así "Julian Celis" encuentra un usuario cuyo firstname contenga
+     * "Julian" y cuyo realname contenga "Celis", sin exigir palabras
+     * consecutivas y en cualquier posición/campo.
      *
      * @param texto Texto de búsqueda (mínimo 3 caracteres).
-     * @return Lista de usuarios con id y nombreCompleto. Vacía si no hay coincidencias.
+     * @return Lista de usuarios con id, nombreCompleto y login.
      */
     public List<UsuarioResponse> buscarUsuarios(String texto) {
         List<UsuarioResponse> resultados = new ArrayList<>();
@@ -51,25 +61,45 @@ public class UsuarioService {
             return resultados;
         }
 
+        String[] tokens = texto.trim().split("\\s+");
+        if (tokens.length == 0) {
+            return resultados;
+        }
+
         try {
-            String valor = URLEncoder.encode(
-                    texto.trim(),
-                    StandardCharsets.UTF_8
-            );
+            int total = tokens.length * 3;
+            StringBuilder query = new StringBuilder("?");
 
-            String query = "?criteria[0][field]=9"
-                    + "&criteria[0][searchtype]=contains"
-                    + "&criteria[0][value]=" + valor
-                    + "&criteria[1][link]=OR"
-                    + "&criteria[1][field]=34"
-                    + "&criteria[1][searchtype]=contains"
-                    + "&criteria[1][value]=" + valor
-                    + "&forcedisplay[0]=2"
-                    + "&forcedisplay[1]=9"
-                    + "&forcedisplay[2]=34"
-                    + "&range=0-9";
+            for (int t = 0; t < tokens.length; t++) {
+                String valor = URLEncoder.encode(
+                        tokens[t],
+                        StandardCharsets.UTF_8
+                );
 
-            JsonNode root = glpiClient.search("User", query);
+                for (int f = 0; f < 3; f++) {
+                    int p = t * 3 + f;
+                    String campo = (f == 0) ? "9" : (f == 1) ? "34" : "1";
+                    query.append("criteria[").append(p).append("][field]=").append(campo)
+                            .append("&criteria[").append(p).append("][searchtype]=contains")
+                            .append("&criteria[").append(p).append("][value]=").append(valor);
+                    if (p < total - 1) {
+                        // Dentro del grupo: OR entre campos del mismo término.
+                        // Entre grupos: AND entre términos (borde % 3 == 0).
+                        boolean esBordeDeGrupo = ((p + 1) % 3 == 0);
+                        query.append("&criteria[").append(p).append("][link]=")
+                                .append(esBordeDeGrupo ? "AND" : "OR");
+                    }
+                    query.append("&");
+                }
+            }
+
+            query.append("forcedisplay[0]=2")
+                    .append("&forcedisplay[1]=1")
+                    .append("&forcedisplay[2]=9")
+                    .append("&forcedisplay[3]=34")
+                    .append("&range=0-9");
+
+            JsonNode root = glpiClient.search("User", query.toString());
             JsonNode data = root.path("data");
 
             if (data.isArray()) {
@@ -117,11 +147,11 @@ public class UsuarioService {
     }
 
     /**
-     * Agrega un usuario a la lista si tiene id válido y nombre completo.
+     * Agrega un usuario a la lista si tiene id válido y algún dato útil.
      *
      * @param resultados Lista donde se acumulan los resultados.
      * @param id         Id del usuario en GLPI.
-     * @param item       Nodo JSON del usuario (firstname/realname).
+     * @param item       Nodo JSON del usuario (login/firstname/realname).
      */
     private void agregarUsuario(List<UsuarioResponse> resultados, int id, JsonNode item) {
         if (id <= 0) {
@@ -130,14 +160,15 @@ public class UsuarioService {
 
         String firstname = getFieldValue(item, "9");
         String realname = getFieldValue(item, "34");
+        String login = getFieldValue(item, "1");
 
         String nombreCompleto = (firstname + " " + realname).trim();
 
-        if (nombreCompleto.isEmpty()) {
+        if (nombreCompleto.isEmpty() && login.isEmpty()) {
             return;
         }
 
-        resultados.add(new UsuarioResponse(id, nombreCompleto));
+        resultados.add(new UsuarioResponse(id, nombreCompleto, login));
     }
 
     /**

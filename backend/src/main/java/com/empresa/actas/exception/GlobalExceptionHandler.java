@@ -1,6 +1,8 @@
 package com.empresa.actas.exception;
 
 import com.empresa.actas.dto.response.ErrorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +26,9 @@ import java.util.stream.Collectors;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
      * Maneja errores de validación de campos (@Valid en DTOs).
@@ -59,7 +64,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+        // El detalle técnico solo va al log del servidor,
+        // nunca al cliente (evita filtrar rutas, trazas e internals).
+        log.error("Error no controlado en la aplicación", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of("Error interno: " + ex.getMessage()));
+                .body(ErrorResponse.of("Error interno del servidor"));
     }
 }

@@ -4,6 +4,8 @@ import com.empresa.actas.dto.request.ActaRequest;
 import com.empresa.actas.dto.response.ActaResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,9 @@ import java.util.Map;
  */
 @Service
 public class ActaService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(ActaService.class);
 
     @Value("${app.generated-dir}")
     private String generatedDir;
@@ -81,7 +86,8 @@ public class ActaService {
             return ActaResponse.ok(nombreZip);
 
         } catch (Exception e) {
-            return ActaResponse.error("Error generando documentación: " + e.getMessage());
+            log.error("Error generando acta de entrega", e);
+            return ActaResponse.error("Error generando documentación");
         }
     }
 }

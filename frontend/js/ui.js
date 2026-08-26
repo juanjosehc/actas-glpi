@@ -135,3 +135,187 @@ function mostrarMensaje(
     setTimeout(eliminar, DURACION_TOAST);
 
 }
+
+/*
+----------------------------------------------------
+VALIDACIONES Y UTILIDADES COMPARTIDAS DE EQUIPOS
+----------------------------------------------------
+*/
+
+/**
+ * Valida un campo obligatorio por su ID.
+ *
+ * Aplica la clase "is-invalid" y muestra el helper-text
+ * si el campo está vacío. Remueve ambos si tiene valor.
+ * Compartida por las páginas de entrega, devolución y
+ * formateo seguro.
+ *
+ * @param {string} id - ID del elemento input a validar.
+ * @returns {boolean} true si el campo tiene valor, false si está vacío.
+ */
+function validarCampo(id) {
+
+    const campo =
+        document.getElementById(id);
+
+    const helper =
+        campo.parentElement.querySelector(".helper-text");
+
+    const vacio =
+        !campo.value.trim();
+
+    if (vacio) {
+
+        campo.classList.add("is-invalid");
+
+        if (helper) {
+            helper.style.display = "block";
+        }
+
+        return false;
+    }
+
+    campo.classList.remove("is-invalid");
+
+    if (helper) {
+        helper.style.display = "none";
+    }
+
+    return true;
+}
+
+/**
+ * Actualiza los títulos "Equipo N" después de agregar o eliminar.
+ *
+ * Recorre todos los .equipo-item y asigna el número
+ * secuencial basado en su posición actual en el DOM.
+ * Compartida por las páginas de entrega, devolución y
+ * formateo seguro.
+ */
+function renumerarEquipos() {
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            equipo.querySelector("h4").textContent =
+                `Equipo ${index + 1}`;
+
+        });
+
+}
+
+/**
+ * Consulta GLPI por serial y auto completa marca, tipo y modelo.
+ *
+ * Endpoint: GET /equipo/{serial}
+ * Los campos se actualizan dentro del bloque del equipo
+ * al que pertenece el botón "Buscar".
+ * Compartida por las páginas de entrega, devolución y
+ * formateo seguro.
+ *
+ * @param {HTMLElement} bloque - Elemento .equipo-item que contiene los campos.
+ */
+async function buscarEquipoBloque(bloque) {
+
+    const serial =
+        bloque.querySelector("[data-serial]").value;
+
+    try {
+
+        const response =
+            await fetch(`${API_URL}/equipo/${serial}`);
+
+        if (!response.ok) {
+            throw new Error("Respuesta no válida del servidor");
+        }
+
+        const data =
+            await response.json();
+
+        bloque.querySelector("[data-marca]").value =
+            data.marca ?? "";
+
+        bloque.querySelector("[data-tipo]").value =
+            data.tipo ?? "";
+
+        bloque.querySelector("[data-modelo]").value =
+            data.modelo ?? "";
+
+        if (
+            data.marca ||
+            data.tipo ||
+            data.modelo
+        ) {
+
+            mostrarMensaje(
+                "Equipo encontrado correctamente",
+                "success"
+            );
+
+        }
+
+    } catch (error) {
+
+        mostrarMensaje(
+            "Error al consultar información del equipo",
+            "error"
+        );
+
+    }
+
+}
+
+/**
+ * Valida los equipos agregados dinámicamente.
+ *
+ * Motor compartido: recibe una función que construye la
+ * lista de campos obligatorios por cada .equipo-item según
+ * la página (entrega: serial+inventario; devolución:
+ * +estado; formateo: +gb). Retorna el primer error
+ * encontrado para scroll automático y foco.
+ *
+ * @param {Function} obtenerCampos - (equipo, index) => [{ elemento, nombre }]
+ * @returns {Object|null} Primer error: { elemento, nombre } o null si todo es válido.
+ */
+function validarEquiposPorBloque(obtenerCampos) {
+
+    let primerError = null;
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            const campos =
+                obtenerCampos(equipo, index);
+
+            campos.forEach(campo => {
+
+                const vacio =
+                    !campo.elemento?.value?.trim();
+
+                if (vacio) {
+
+                    campo.elemento.classList.add("is-invalid");
+
+                    if (!primerError) {
+
+                        primerError = {
+                            elemento: campo.elemento,
+                            nombre: campo.nombre
+                        };
+
+                    }
+
+                } else {
+
+                    campo.elemento.classList.remove("is-invalid");
+
+                }
+
+            });
+
+        });
+
+    return primerError;
+}

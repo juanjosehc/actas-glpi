@@ -64,9 +64,17 @@ public class ActaController {
      */
     @GetMapping("/descargar-acta/{nombreZip}")
     public ResponseEntity<?> descargarActa(@PathVariable String nombreZip) {
-        Path rutaZip = Paths.get(generatedDir, nombreZip);
+        if (esNombreZipInvalido(nombreZip)) {
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of("Nombre de archivo inválido"));
+        }
 
-        if (!rutaZip.toFile().exists()) {
+        Path dir = Paths.get(generatedDir).toAbsolutePath().normalize();
+        Path rutaZip = dir.resolve(nombreZip).normalize();
+
+        // Defensa en profundidad contra path traversal
+        // (ni siquiera debe intentarse servir algo fuera del directorio).
+        if (!rutaZip.startsWith(dir) || !rutaZip.toFile().exists()) {
             return ResponseEntity.ok(ErrorResponse.of("Archivo no encontrado"));
         }
 
@@ -77,5 +85,20 @@ public class ActaController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename=\"" + nombreZip + "\"")
                 .body(resource);
+    }
+
+    /**
+     * Valida que el nombre del ZIP no intente salir del directorio
+     * de archivos generados (rechaza separadores de ruta y "..").
+     *
+     * @param nombreZip Nombre del archivo a validar.
+     * @return true si el nombre es inválido (traversal o malformado).
+     */
+    private boolean esNombreZipInvalido(String nombreZip) {
+        return nombreZip == null
+                || nombreZip.isBlank()
+                || nombreZip.contains("..")
+                || nombreZip.contains("/")
+                || nombreZip.contains("\\");
     }
 }
