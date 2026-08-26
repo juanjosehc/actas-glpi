@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 /**
  * DTO de respuesta para la búsqueda de usuarios en GLPI.
  *
- * Contiene únicamente los datos necesarios para el
- * autocompletado en el frontend: id y nombre completo
- * construido como CONCAT(firstname, ' ', realname).
+ * Contiene los datos necesarios para el autocompletado en
+ * el frontend: id, nombre completo CONCAT(firstname, ' ',
+ * realname) y login (campo name de GLPI).
  */
 @Data
 @NoArgsConstructor
@@ -18,4 +18,5 @@ public class UsuarioResponse {
 
     private int id;
     private String nombreCompleto;
+    private String login;
 }

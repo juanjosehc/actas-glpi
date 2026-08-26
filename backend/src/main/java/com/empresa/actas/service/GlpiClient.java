@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 /**
  * Cliente HTTP compartido para la API REST de GLPI.
@@ -40,7 +41,13 @@ public class GlpiClient {
     @Value("${glpi.user-token}")
     private String userToken;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    // Timeouts para no dejar requests colgados si GLPI está caído o lento.
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(CONNECT_TIMEOUT)
+            .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -52,6 +59,7 @@ public class GlpiClient {
     public String iniciarSesion() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(glpiUrl + "/initSession"))
+                .timeout(REQUEST_TIMEOUT)
                 .header("App-Token", appToken)
                 .header("Authorization", "user_token " + userToken)
                 .GET()
@@ -80,6 +88,7 @@ public class GlpiClient {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(glpiUrl + "/search/" + itemtype + query))
+                .timeout(REQUEST_TIMEOUT)
                 .header("App-Token", appToken)
                 .header("Session-Token", sessionToken)
                 .GET()

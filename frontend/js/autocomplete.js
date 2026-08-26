@@ -10,8 +10,8 @@ Recibido por).
 Se conecta al endpoint del backend:
 
 - GET /usuarios?texto=juan
-  → Busca usuarios en GLPI por firstname o realname.
-  → Retorna [{ id, nombreCompleto }].
+  → Busca usuarios en GLPI por firstname, realname o login.
+  → Retorna [{ id, nombreCompleto, login }].
 
 Comportamiento:
 
@@ -145,8 +145,34 @@ function initAutocomplete(input, opciones = {}) {
 
                 item.dataset.indice = String(indice);
 
-                item.textContent =
+                const nombre =
+                    document.createElement("div");
+
+                nombre.className =
+                    "autocomplete-nombre";
+
+                nombre.textContent =
                     usuario.nombreCompleto;
+
+                item.appendChild(nombre);
+
+                const login =
+                    (usuario.login || "").trim();
+
+                if (login) {
+
+                    const lineaLogin =
+                        document.createElement("div");
+
+                    lineaLogin.className =
+                        "autocomplete-login";
+
+                    lineaLogin.textContent =
+                        login;
+
+                    item.appendChild(lineaLogin);
+
+                }
 
                 item.setAttribute(
                     "role",

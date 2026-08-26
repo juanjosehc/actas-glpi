@@ -562,89 +562,11 @@ function agregarEquipo() {
 
 }
 
-/**
- * Consulta GLPI por serial y auto completa marca, tipo y modelo.
- *
- * Endpoint: GET /equipo/{serial}
- * Los campos se actualizan dentro del bloque del equipo
- * al que pertenece el botón "Buscar".
- *
- * @param {HTMLElement} bloque - Elemento .equipo-item que contiene los campos.
- */
-async function buscarEquipoBloque(bloque) {
-
-    const serial =
-        bloque.querySelector("[data-serial]").value;
-
-    try {
-
-        const response =
-            await fetch(`${API_URL}/equipo/${serial}`);
-
-        if (!response.ok) {
-            throw new Error("Respuesta no válida del servidor");
-        }
-
-        const data =
-            await response.json();
-
-        bloque.querySelector("[data-marca]").value =
-            data.marca ?? "";
-
-        bloque.querySelector("[data-tipo]").value =
-            data.tipo ?? "";
-
-        bloque.querySelector("[data-modelo]").value =
-            data.modelo ?? "";
-
-        if (
-            data.marca ||
-            data.tipo ||
-            data.modelo
-        ) {
-
-            mostrarMensaje(
-                "Equipo encontrado correctamente",
-                "success"
-            );
-
-        }
-
-    } catch (error) {
-
-        mostrarMensaje(
-            "Error al consultar información del equipo",
-            "error"
-        );
-
-    }
-
-}
-
 /*
 ----------------------------------------------------
 UTILIDADES DE RENUMERACIÓN
 ----------------------------------------------------
 */
-
-/**
- * Actualiza los títulos "Equipo N" después de agregar o eliminar.
- *
- * Recorre todos los .equipo-item y asigna el número
- * secuencial basado en su posición actual en el DOM.
- */
-function renumerarEquipos() {
-
-    document
-        .querySelectorAll(".equipo-item")
-        .forEach((equipo, index) => {
-
-            equipo.querySelector("h4").textContent =
-                `Equipo ${index + 1}`;
-
-        });
-
-}
 
 /*
 ----------------------------------------------------
@@ -653,104 +575,30 @@ VALIDACIONES
 */
 
 /**
- * Valida un campo obligatorio por su ID.
- *
- * Aplica la clase "is-invalid" y muestra el helper-text
- * si el campo está vacío. Remueve ambos si tiene valor.
- *
- * @param {string} id - ID del elemento input a validar.
- * @returns {boolean} true si el campo tiene valor, false si está vacío.
- */
-function validarCampo(id) {
-
-    const campo =
-        document.getElementById(id);
-
-    const helper =
-        campo.parentElement.querySelector(".helper-text");
-
-    const vacio =
-        !campo.value.trim();
-
-    if (vacio) {
-
-        campo.classList.add("is-invalid");
-
-        if (helper) {
-            helper.style.display = "block";
-        }
-
-        return false;
-    }
-
-    campo.classList.remove("is-invalid");
-
-    if (helper) {
-        helper.style.display = "none";
-    }
-
-    return true;
-}
-
-/**
  * Valida los equipos agregados dinámicamente.
  *
- * En formateo seguro valida tres campos por equipo: serial, inventario y GB.
- * Retorna el primer error encontrado para permitir scroll
- * automático y foco en el campo inválido.
+ * En formateo seguro valida por equipo: serial, inventario y GB.
+ * Delega el motor al helper compartido validarEquiposPorBloque.
  *
  * @returns {Object|null} Primer error: { elemento, nombre } o null si todo es válido.
  */
 function validarEquipos() {
 
-    let primerError = null;
+    return validarEquiposPorBloque((equipo, index) => [
 
-    document
-        .querySelectorAll(".equipo-item")
-        .forEach((equipo, index) => {
+        {
+            elemento: equipo.querySelector("[data-serial]"),
+            nombre: `Serial del Equipo ${index + 1}`
+        },
+        {
+            elemento: equipo.querySelector("[data-inventario]"),
+            nombre: `Inventario del Equipo ${index + 1}`
+        },
+        {
+            elemento: equipo.querySelector("[data-gb]"),
+            nombre: `Cantidad en GB del Equipo ${index + 1}`
+        }
 
-            const campos = [
-                {
-                    elemento: equipo.querySelector("[data-serial]"),
-                    nombre: `Serial del Equipo ${index + 1}`
-                },
-                {
-                    elemento: equipo.querySelector("[data-inventario]"),
-                    nombre: `Inventario del Equipo ${index + 1}`
-                },
-                {
-                    elemento: equipo.querySelector("[data-gb]"),
-                    nombre: `Cantidad en GB del Equipo ${index + 1}`
-                }
-            ];
+    ]);
 
-            campos.forEach(campo => {
-
-                const vacio =
-                    !campo.elemento?.value?.trim();
-
-                if (vacio) {
-
-                    campo.elemento.classList.add("is-invalid");
-
-                    if (!primerError) {
-
-                        primerError = {
-                            elemento: campo.elemento,
-                            nombre: campo.nombre
-                        };
-
-                    }
-
-                } else {
-
-                    campo.elemento.classList.remove("is-invalid");
-
-                }
-
-            });
-
-        });
-
-    return primerError;
 }
