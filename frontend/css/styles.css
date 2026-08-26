@@ -113,6 +113,30 @@ button{
     }
 }
 
+#acta-formateo-layout {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr
+        1fr;
+    gap: 20px;
+
+}
+
+@media screen and (max-width: 1024px) {
+    #acta-formateo-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Formateo Seguro: cards de igual ancho, un poco más angostas que el
+   ancho total y centradas. Conserva la altura y el scroll heredados. */
+#acta-formateo-layout {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 #checklist-section {
 
     margin-top: 20px;

@@ -285,6 +285,76 @@ public class DocumentoWordService {
     }
 
     /**
+     * Genera el acta de formateo seguro (DOCX).
+     *
+     * Prepara:
+     * - Fecha descompuesta en dia, mes, anio.
+     * - Alias entrega_por = entregado_por (la firma del template usa
+     *   {{entrega_por}}; no se modifica la plantilla).
+     * - 4 equipos indexados (eq_N_marca, eq_N_tipo, eq_N_modelo,
+     *   eq_N_serial, eq_N_inventario, eq_N_gb).
+     *
+     * Template: "ActaFormateoSeguro.docx"
+     * Salida: FormateoSeguro_{serial}_{asunto}.docx
+     *
+     * @param datos Mapa de datos con el contenido del acta.
+     * @return Ruta del DOCX generado.
+     * @throws IOException Si hay error de E/S al leer template o escribir salida.
+     */
+    public Path generarFormateoSeguro(Map<String, Object> datos) throws IOException {
+
+        Path outputDir = Paths.get(generatedDir);
+        Files.createDirectories(outputDir);
+
+        prepararFecha(datos);
+
+        datos.put("entrega_por",
+                datos.getOrDefault("entregado_por", ""));
+
+        for (int i = 1; i <= 4; i++) {
+            datos.put("eq_" + i + "_marca", "");
+            datos.put("eq_" + i + "_tipo", "");
+            datos.put("eq_" + i + "_modelo", "");
+            datos.put("eq_" + i + "_serial", "");
+            datos.put("eq_" + i + "_inventario", "");
+            datos.put("eq_" + i + "_gb", "");
+        }
+
+        List<Map<String, Object>> eqList = asMapList(datos.get("equipos"));
+        int idx = 0;
+        for (Map<String, Object> eq : eqList) {
+            idx++;
+            if (idx > 4) break;
+            datos.put("eq_" + idx + "_marca", eq.getOrDefault("marca", ""));
+            datos.put("eq_" + idx + "_tipo", eq.getOrDefault("tipo", ""));
+            datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
+            datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
+            datos.put("eq_" + idx + "_gb", eq.getOrDefault("gb", ""));
+        }
+
+        Map<String, String> vars = new HashMap<>();
+        for (Map.Entry<String, Object> entry : datos.entrySet()) {
+            vars.put(entry.getKey(), String.valueOf(entry.getValue()));
+        }
+
+        Path templatePath = resolveTemplate("ActaFormateoSeguro.docx");
+
+        String asunto = datos.getOrDefault("asunto", "").toString()
+                .replaceAll("[^a-zA-Z0-9]", "");
+
+        String serial = "SinSerial";
+        if (!eqList.isEmpty()) {
+            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+        }
+
+        String fileName = "FormateoSeguro_" + serial + "_" + asunto + ".docx";
+        Path outputPath = outputDir.resolve(fileName);
+
+        return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
+    }
+
+    /**
      * Resuelve la ruta de un template DOCX.
      *
      * Soporta dos modos:
