@@ -1,0 +1,222 @@
+{
+  ".vscode/settings.json": {
+    "mtime": 1785861803.4593787,
+    "ast_hash": "6cb3e1edf578f951b97eaf8d8214d93b",
+    "semantic_hash": "6cb3e1edf578f951b97eaf8d8214d93b"
+  },
+  "backend/pom.xml": {
+    "mtime": 1784815564.6671615,
+    "ast_hash": "f498e5ec92c12f9edafa0f81216ca343",
+    "semantic_hash": "f498e5ec92c12f9edafa0f81216ca343"
+  },
+  "backend/src/main/java/com/empresa/actas/ActasApplication.java": {
+    "mtime": 1784823709.0314622,
+    "ast_hash": "78304c9e848694fb7463c06b5998309d",
+    "semantic_hash": "78304c9e848694fb7463c06b5998309d"
+  },
+  "backend/src/main/java/com/empresa/actas/config/AppConfig.java": {
+    "mtime": 1784823691.6039703,
+    "ast_hash": "7ef456b1a753d7e85b8390c2901f9863",
+    "semantic_hash": "7ef456b1a753d7e85b8390c2901f9863"
+  },
+  "backend/src/main/java/com/empresa/actas/config/CorsConfig.java": {
+    "mtime": 1785965114.3417244,
+    "ast_hash": "fc1005bdb031cfaf71583e6ca9bf1bfc",
+    "semantic_hash": "fc1005bdb031cfaf71583e6ca9bf1bfc"
+  },
+  "backend/src/main/java/com/empresa/actas/controller/ActaController.java": {
+    "mtime": 1784823675.0290482,
+    "ast_hash": "8da606a19ff9c174438f3d4c2316230f",
+    "semantic_hash": "8da606a19ff9c174438f3d4c2316230f"
+  },
+  "backend/src/main/java/com/empresa/actas/controller/DevolucionController.java": {
+    "mtime": 1784823679.4406123,
+    "ast_hash": "65ba2f9d189e2bc66b1995cefd3baa01",
+    "semantic_hash": "65ba2f9d189e2bc66b1995cefd3baa01"
+  },
+  "backend/src/main/java/com/empresa/actas/controller/EquipoController.java": {
+    "mtime": 1784823683.3327909,
+    "ast_hash": "19bebc786dfac562ec8f9131874a2625",
+    "semantic_hash": "19bebc786dfac562ec8f9131874a2625"
+  },
+  "backend/src/main/java/com/empresa/actas/controller/UsuarioController.java": {
+    "mtime": 1785861803.4787142,
+    "ast_hash": "d41848412ce6d0b013da4eaabb97b4db",
+    "semantic_hash": "d41848412ce6d0b013da4eaabb97b4db"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/request/ActaRequest.java": {
+    "mtime": 1784823618.8390634,
+    "ast_hash": "e6e4976060eb542443b666b125b31250",
+    "semantic_hash": "e6e4976060eb542443b666b125b31250"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/request/DevolucionRequest.java": {
+    "mtime": 1785861803.4793897,
+    "ast_hash": "74a094314a7e7409a8c993d1b6d07f7d",
+    "semantic_hash": "74a094314a7e7409a8c993d1b6d07f7d"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/request/EquipoItem.java": {
+    "mtime": 1784823627.123051,
+    "ast_hash": "2523d155f5062d722bb7816d28047c39",
+    "semantic_hash": "2523d155f5062d722bb7816d28047c39"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/request/HardwareItem.java": {
+    "mtime": 1784823628.934878,
+    "ast_hash": "2e18220f84fd6c796e98b2dd4a2eac49",
+    "semantic_hash": "2e18220f84fd6c796e98b2dd4a2eac49"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/request/OtroElementoItem.java": {
+    "mtime": 1784823632.2085729,
+    "ast_hash": "1d0d66179ce77d464b8399ebf4065309",
+    "semantic_hash": "1d0d66179ce77d464b8399ebf4065309"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/response/ActaResponse.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "066f27c24b2bf505954d6fc8e6d3248b",
+    "semantic_hash": "066f27c24b2bf505954d6fc8e6d3248b"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/response/EquipoResponse.java": {
+    "mtime": 1784823644.9280815,
+    "ast_hash": "7764568dd3d9078fe74a9cceb01c17c6",
+    "semantic_hash": "7764568dd3d9078fe74a9cceb01c17c6"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/response/ErrorResponse.java": {
+    "mtime": 1784823642.623592,
+    "ast_hash": "13a16a54cb0c3fc467a8e53942d5f736",
+    "semantic_hash": "13a16a54cb0c3fc467a8e53942d5f736"
+  },
+  "backend/src/main/java/com/empresa/actas/dto/response/UsuarioResponse.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "098f5481196e63a93a37b487c488ffdf",
+    "semantic_hash": "098f5481196e63a93a37b487c488ffdf"
+  },
+  "backend/src/main/java/com/empresa/actas/exception/GlobalExceptionHandler.java": {
+    "mtime": 1784823706.6421432,
+    "ast_hash": "277dd95d57fcd82b93b74794d1eb74de",
+    "semantic_hash": "277dd95d57fcd82b93b74794d1eb74de"
+  },
+  "backend/src/main/java/com/empresa/actas/service/ActaService.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "175a58764b49ffe8968c1f4cc115a4cc",
+    "semantic_hash": "175a58764b49ffe8968c1f4cc115a4cc"
+  },
+  "backend/src/main/java/com/empresa/actas/service/DevolucionService.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "bd8385168b8e4d7eb5d2db67d2647948",
+    "semantic_hash": "bd8385168b8e4d7eb5d2db67d2647948"
+  },
+  "backend/src/main/java/com/empresa/actas/service/DocumentoWordService.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "d6d46dea42411a3a198c47f18697e069",
+    "semantic_hash": "d6d46dea42411a3a198c47f18697e069"
+  },
+  "backend/src/main/java/com/empresa/actas/service/DocxTemplateEngine.java": {
+    "mtime": 1784823817.9270806,
+    "ast_hash": "062f38d49a5327c3c40c0527076fde95",
+    "semantic_hash": "062f38d49a5327c3c40c0527076fde95"
+  },
+  "backend/src/main/java/com/empresa/actas/service/EquipoService.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "44e696476d7071f63e2dd3c24f660986",
+    "semantic_hash": "44e696476d7071f63e2dd3c24f660986"
+  },
+  "backend/src/main/java/com/empresa/actas/service/GlpiClient.java": {
+    "mtime": 1785861803.481982,
+    "ast_hash": "c182f5f489b046f231d65cb57c8c0be0",
+    "semantic_hash": "c182f5f489b046f231d65cb57c8c0be0"
+  },
+  "backend/src/main/java/com/empresa/actas/service/UsuarioService.java": {
+    "mtime": 1785861803.4897716,
+    "ast_hash": "1315acd6daa3297e8da44b53e2d68b8a",
+    "semantic_hash": "1315acd6daa3297e8da44b53e2d68b8a"
+  },
+  "backend/src/main/java/com/empresa/actas/service/ZipService.java": {
+    "mtime": 1784823844.925452,
+    "ast_hash": "f1c5132a0739b196d7ff45e58db57729",
+    "semantic_hash": "f1c5132a0739b196d7ff45e58db57729"
+  },
+  "frontend/js/app.js": {
+    "mtime": 1785861803.505633,
+    "ast_hash": "d04c5e919382e65b0ed9c0542c9c7701",
+    "semantic_hash": "d04c5e919382e65b0ed9c0542c9c7701"
+  },
+  "frontend/js/autocomplete.js": {
+    "mtime": 1785861803.5068817,
+    "ast_hash": "bbe75cebe098a1ed17bf5c672e64dd96",
+    "semantic_hash": "bbe75cebe098a1ed17bf5c672e64dd96"
+  },
+  "frontend/js/config.js": {
+    "mtime": 1787755476.3990834,
+    "ast_hash": "a366f88500f0cb85350db5e5d71cc2d5",
+    "semantic_hash": "a366f88500f0cb85350db5e5d71cc2d5"
+  },
+  "frontend/js/devolucion.js": {
+    "mtime": 1785861803.5068817,
+    "ast_hash": "74b612d32a79ea18fe9bc8c44848a58d",
+    "semantic_hash": "74b612d32a79ea18fe9bc8c44848a58d"
+  },
+  "frontend/js/ui.js": {
+    "mtime": 1785861803.5068817,
+    "ast_hash": "4bcf21dcf04e6e73273827af13b210a5",
+    "semantic_hash": "4bcf21dcf04e6e73273827af13b210a5"
+  },
+  "frontend/package.json": {
+    "mtime": 1785861803.5068817,
+    "ast_hash": "3850bc5e4ee15d556d24c9b5bbcd5523",
+    "semantic_hash": "3850bc5e4ee15d556d24c9b5bbcd5523"
+  },
+  "ARQUITECTURA.md": {
+    "mtime": 1785861803.4593787,
+    "ast_hash": "9a6548c8fa913e422142a2654eb941cb",
+    "semantic_hash": "9a6548c8fa913e422142a2654eb941cb"
+  },
+  "FLUJO_FUNCIONAL.md": {
+    "mtime": 1785861803.4674647,
+    "ast_hash": "4f0d9bed13a7ac211368635bb1eb3d6e",
+    "semantic_hash": "4f0d9bed13a7ac211368635bb1eb3d6e"
+  },
+  "README.md": {
+    "mtime": 1785861803.4704638,
+    "ast_hash": "1704215e6613d5d52674ff242e1ea6ec",
+    "semantic_hash": "1704215e6613d5d52674ff242e1ea6ec"
+  },
+  "backend/src/main/resources/application.yml": {
+    "mtime": 1785861803.4907818,
+    "ast_hash": "75739bd7cb301fb67133d3e32a75a916",
+    "semantic_hash": "75739bd7cb301fb67133d3e32a75a916"
+  },
+  "docker.md": {
+    "mtime": 1785963567.4585323,
+    "ast_hash": "f59c199a76526e4d7bd4dd3bb85714d3",
+    "semantic_hash": "f59c199a76526e4d7bd4dd3bb85714d3"
+  },
+  "docs/MANTENIMIENTO.md": {
+    "mtime": 1785861803.5004327,
+    "ast_hash": "51033b0d14dcfb3cfd272d6be4965d15",
+    "semantic_hash": "51033b0d14dcfb3cfd272d6be4965d15"
+  },
+  "docs/MANUAL_USUARIO.md": {
+    "mtime": 1785861803.5024476,
+    "ast_hash": "dc20e976ec84ecc529cfdec5cdcb69ac",
+    "semantic_hash": "dc20e976ec84ecc529cfdec5cdcb69ac"
+  },
+  "frontend/index.html": {
+    "mtime": 1785962701.949362,
+    "ast_hash": "bc55c5a1dbf3709c5f22a5ce1c1f4a69",
+    "semantic_hash": "bc55c5a1dbf3709c5f22a5ce1c1f4a69"
+  },
+  "frontend/pages/acta-devolucion.html": {
+    "mtime": 1785861803.5139868,
+    "ast_hash": "7dafd8a38e329ce103a701557e33c4bc",
+    "semantic_hash": "7dafd8a38e329ce103a701557e33c4bc"
+  },
+  "frontend/pages/acta-entrega.html": {
+    "mtime": 1785861803.5157647,
+    "ast_hash": "f18c91ef6bd2619f197b2d1c73228482",
+    "semantic_hash": "f18c91ef6bd2619f197b2d1c73228482"
+  },
+  "frontend/img/logo.png": {
+    "mtime": 1784897066.5476983,
+    "ast_hash": "1912d016324328628b36bc5a1bae5f16",
+    "semantic_hash": "1912d016324328628b36bc5a1bae5f16"
+  }
+}
