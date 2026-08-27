@@ -3,3 +3,6 @@
 # Dependencias y artefactos de build
 node_modules/
 backend/target/
+graphify-out/
+opencode.jsonc
+.gitignore
