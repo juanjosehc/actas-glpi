@@ -10,8 +10,8 @@ import java.util.zip.ZipOutputStream;
 /**
  * Servicio de empaquetamiento de archivos en ZIP.
  *
- * Utilizado por ActaService y DevolucionService para
- * comprimir los DOCX generados en un solo archivo para descarga.
+ * Utilizado por ActaService, DevolucionService y FormateoSeguroService
+ * para comprimir los DOCX generados en un solo archivo para descarga.
  *
  * Soporta un número variable de archivos (varargs).
  * El ZIP se escribe en el Path de destino especificado.

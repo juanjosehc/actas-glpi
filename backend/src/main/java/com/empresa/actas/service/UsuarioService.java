@@ -16,8 +16,12 @@ import java.util.Map;
  *
  * Flujo de búsqueda:
  * 1. Autenticación con App-Token y User-Token (vía GlpiClient).
- * 2. Buscar en /search/User por firstname (field 9) u realname (field 34).
- * 3. Pedir explícitamente la columna de ID (field 2) con forcedisplay.
+ * 2. Buscar en /search/User por firstname (field 9), realname (field 34)
+ *    o login (field 1), con estrategia multi-término OR/AND
+ *    (ver buscarUsuarios: "Julian Celis" encuentra firstname="Julian"
+ *    y realname="Celis" en cualquier campo y sin exigir consecutivas).
+ * 3. Pedir explícitamente las columnas ID (2), login (1), firstname (9)
+ *    y realname (34) con forcedisplay.
  * 4. Construir el nombre completo: firstname + " " + realname.
  * 5. Limitar resultados a 10 (range=0-9).
  *
@@ -25,6 +29,7 @@ import java.util.Map;
  *
  * Campos GLPI:
  * - Field 2:  ID del usuario.
+ * - Field 1:  login (cuenta de usuario).
  * - Field 9:  firstname (nombres).
  * - Field 34: realname (apellidos).
  */
