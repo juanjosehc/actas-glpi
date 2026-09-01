@@ -54,7 +54,7 @@ public class DocumentoWordService {
      * - 10 equipos indexados (eq_N_marca, eq_N_tipo, eq_N_modelo, eq_N_serial, eq_N_inventario).
      *
      * Template: "Acta de Entrega 2 2 - copia.docx"
-     * Salida: ActaEntrega_{serial}_{asunto}.docx
+     * Salida: ActaEntrega_{SERIAL}_{NOMBRE}.docx
      *
      * @param datos Mapa de datos con el contenido del acta.
      * @return Ruta del DOCX generado.
@@ -99,7 +99,8 @@ public class DocumentoWordService {
             datos.put("eq_" + idx + "_marca", eq.getOrDefault("marca", ""));
             datos.put("eq_" + idx + "_tipo", eq.getOrDefault("tipo", ""));
             datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
-            datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_" + idx + "_serial",
+                    NombreArchivoUtil.normalizarSerial(String.valueOf(eq.getOrDefault("serial", ""))));
             datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
         }
 
@@ -110,16 +111,16 @@ public class DocumentoWordService {
 
         Path templatePath = resolveTemplate("Acta de Entrega 2 2 - copia.docx");
 
-        String asunto = datos.getOrDefault("asunto", "").toString()
-                .replaceAll("[^a-zA-Z0-9]", "");
-
         String serial = "SinSerial";
         if (!eqList.isEmpty()) {
-            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+            serial = NombreArchivoUtil.normalizarSerial(
+                    eqList.get(0).getOrDefault("serial", "SinSerial").toString());
         }
 
-        String fileName = "ActaEntrega_" + serial + "_" + asunto + ".docx";
-        Path outputPath = outputDir.resolve(fileName);
+        // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+        String base = NombreArchivoUtil.nombreBase(
+                "ActaEntrega", serial, datos.get("entregado_a"));
+        Path outputPath = outputDir.resolve(base + ".docx");
 
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
@@ -135,7 +136,7 @@ public class DocumentoWordService {
      * - Solo el primer equipo (para la sección de identificación).
      *
      * Template: "ListaChequeo.docx"
-     * Salida: Checklist_{serial}_{asunto}.docx
+     * Salida: Checklist_{SERIAL}_{NOMBRE}.docx
      *
      * @param datos Mapa de datos con el contenido del checklist.
      * @return Ruta del DOCX generado.
@@ -176,7 +177,8 @@ public class DocumentoWordService {
             datos.put("eq_1_marca", eq.getOrDefault("marca", ""));
             datos.put("eq_1_tipo", eq.getOrDefault("tipo", ""));
             datos.put("eq_1_modelo", eq.getOrDefault("modelo", ""));
-            datos.put("eq_1_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_1_serial",
+                    NombreArchivoUtil.normalizarSerial(String.valueOf(eq.getOrDefault("serial", ""))));
             datos.put("eq_1_inventario", eq.getOrDefault("inventario", ""));
         } else {
             datos.put("eq_1_marca", "");
@@ -193,16 +195,16 @@ public class DocumentoWordService {
 
         Path templatePath = resolveTemplate("ListaChequeo.docx");
 
-        String asunto = datos.getOrDefault("asunto", "").toString()
-                .replaceAll("[^a-zA-Z0-9]", "");
-
         String serial = "SinSerial";
         if (!eqList.isEmpty()) {
-            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+            serial = NombreArchivoUtil.normalizarSerial(
+                    eqList.get(0).getOrDefault("serial", "SinSerial").toString());
         }
 
-        String fileName = "Checklist_" + serial + "_" + asunto + ".docx";
-        Path outputPath = outputDir.resolve(fileName);
+        // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+        String base = NombreArchivoUtil.nombreBase(
+                "Checklist", serial, datos.get("entregado_a"));
+        Path outputPath = outputDir.resolve(base + ".docx");
 
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
@@ -216,7 +218,7 @@ public class DocumentoWordService {
      * - 10 "otros elementos" indexados (ot_N_tipo).
      *
      * Template: "ActaDevolucion.docx"
-     * Salida: Devolucion_{serial}_{motivo}.docx
+     * Salida: ActaDevolucion_{SERIAL}_{NOMBRE}.docx
      *
      * @param datos Mapa de datos con el contenido del acta de devolución.
      * @return Ruta del DOCX generado.
@@ -246,7 +248,8 @@ public class DocumentoWordService {
             datos.put("eq_" + idx + "_marca", eq.getOrDefault("marca", ""));
             datos.put("eq_" + idx + "_tipo", eq.getOrDefault("tipo", ""));
             datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
-            datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_" + idx + "_serial",
+                    NombreArchivoUtil.normalizarSerial(String.valueOf(eq.getOrDefault("serial", ""))));
             datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
             datos.put("eq_" + idx + "_estado", eq.getOrDefault("estado", ""));
         }
@@ -272,14 +275,14 @@ public class DocumentoWordService {
 
         String serial = "SinSerial";
         if (!eqList.isEmpty()) {
-            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+            serial = NombreArchivoUtil.normalizarSerial(
+                    eqList.get(0).getOrDefault("serial", "SinSerial").toString());
         }
 
-        String motivo = datos.getOrDefault("motivo", "").toString()
-                .replaceAll("[^a-zA-Z0-9]", "");
-
-        String fileName = "Devolucion_" + serial + "_" + motivo + ".docx";
-        Path outputPath = outputDir.resolve(fileName);
+        // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+        String base = NombreArchivoUtil.nombreBase(
+                "ActaDevolucion", serial, datos.get("entregado_por"));
+        Path outputPath = outputDir.resolve(base + ".docx");
 
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }
@@ -295,7 +298,7 @@ public class DocumentoWordService {
      *   eq_N_serial, eq_N_inventario, eq_N_gb).
      *
      * Template: "ActaFormateoSeguro.docx"
-     * Salida: FormateoSeguro_{serial}_{asunto}.docx
+     * Salida: ActaFormateoSeguro_{SERIAL}_{NOMBRE}.docx
      *
      * @param datos Mapa de datos con el contenido del acta.
      * @return Ruta del DOCX generado.
@@ -328,7 +331,8 @@ public class DocumentoWordService {
             datos.put("eq_" + idx + "_marca", eq.getOrDefault("marca", ""));
             datos.put("eq_" + idx + "_tipo", eq.getOrDefault("tipo", ""));
             datos.put("eq_" + idx + "_modelo", eq.getOrDefault("modelo", ""));
-            datos.put("eq_" + idx + "_serial", eq.getOrDefault("serial", ""));
+            datos.put("eq_" + idx + "_serial",
+                    NombreArchivoUtil.normalizarSerial(String.valueOf(eq.getOrDefault("serial", ""))));
             datos.put("eq_" + idx + "_inventario", eq.getOrDefault("inventario", ""));
             datos.put("eq_" + idx + "_gb", eq.getOrDefault("gb", ""));
         }
@@ -340,16 +344,16 @@ public class DocumentoWordService {
 
         Path templatePath = resolveTemplate("ActaFormateoSeguro.docx");
 
-        String asunto = datos.getOrDefault("asunto", "").toString()
-                .replaceAll("[^a-zA-Z0-9]", "");
-
         String serial = "SinSerial";
         if (!eqList.isEmpty()) {
-            serial = eqList.get(0).getOrDefault("serial", "SinSerial").toString();
+            serial = NombreArchivoUtil.normalizarSerial(
+                    eqList.get(0).getOrDefault("serial", "SinSerial").toString());
         }
 
-        String fileName = "FormateoSeguro_" + serial + "_" + asunto + ".docx";
-        Path outputPath = outputDir.resolve(fileName);
+        // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+        String base = NombreArchivoUtil.nombreBase(
+                "ActaFormateoSeguro", serial, datos.get("entregado_por"));
+        Path outputPath = outputDir.resolve(base + ".docx");
 
         return DocxTemplateEngine.processTemplate(templatePath, vars, outputPath);
     }

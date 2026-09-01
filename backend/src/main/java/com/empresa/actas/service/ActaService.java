@@ -25,7 +25,7 @@ import java.util.Map;
  * 5. Empaquetar ambos DOCX en un ZIP vía ZipService.
  * 6. Retornar ActaResponse con el nombre del ZIP.
  *
- * Naming del ZIP: ActaLista_{serial}_{asunto}.zip
+ * Naming del ZIP: ActaEntrega_{SERIAL}_{NOMBRE}.zip
  */
 @Service
 public class ActaService {
@@ -70,15 +70,16 @@ public class ActaService {
 
             Path rutaChecklist = wordService.generarChecklist(datos);
 
-            String asunto = request.getAsunto()
-                    .replaceAll("[^a-zA-Z0-9]", "");
-
             String serial = "SinSerial";
             if (request.getEquipos() != null && !request.getEquipos().isEmpty()) {
-                serial = request.getEquipos().get(0).getSerial();
+                serial = NombreArchivoUtil.normalizarSerial(
+                        request.getEquipos().get(0).getSerial());
             }
 
-            String nombreZip = "ActaLista_" + serial + "_" + asunto + ".zip";
+            // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+            String base = NombreArchivoUtil.nombreBase(
+                    "ActaEntrega", serial, request.getEntregado_a());
+            String nombreZip = base + ".zip";
             Path rutaZip = outputDir.resolve(nombreZip);
 
             zipService.crearZip(rutaZip, rutaActa, rutaChecklist);
