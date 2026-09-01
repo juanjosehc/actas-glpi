@@ -25,7 +25,7 @@ import java.util.Map;
  * 5. Retornar ActaResponse con el nombre del ZIP.
  *
  * A diferencia de ActaService, solo genera un DOCX (no checklist).
- * Naming del ZIP: Devolucion_{serial}_{motivo}.zip
+ * Naming del ZIP: ActaDevolucion_{SERIAL}_{NOMBRE}.zip
  */
 @Service
 public class DevolucionService {
@@ -70,13 +70,14 @@ public class DevolucionService {
 
             String serial = "SinSerial";
             if (request.getEquipos() != null && !request.getEquipos().isEmpty()) {
-                serial = request.getEquipos().get(0).getSerial();
+                serial = NombreArchivoUtil.normalizarSerial(
+                        request.getEquipos().get(0).getSerial());
             }
 
-            String motivo = request.getMotivo()
-                    .replaceAll("[^a-zA-Z0-9]", "");
-
-            String nombreZip = "Devolucion_" + serial + "_" + motivo + ".zip";
+            // Naming centralizado: [TIPO_ACTA]_[SERIAL]_[NOMBRE] vía NombreArchivoUtil.
+            String base = NombreArchivoUtil.nombreBase(
+                    "ActaDevolucion", serial, request.getEntregado_por());
+            String nombreZip = base + ".zip";
             Path rutaZip = outputDir.resolve(nombreZip);
 
             zipService.crearZip(rutaZip, rutaDevolucion);

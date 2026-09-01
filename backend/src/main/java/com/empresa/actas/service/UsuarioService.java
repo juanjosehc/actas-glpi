@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -17,13 +18,13 @@ import java.util.Map;
  * Flujo de búsqueda:
  * 1. Autenticación con App-Token y User-Token (vía GlpiClient).
  * 2. Buscar en /search/User por firstname (field 9), realname (field 34)
- *    o login (field 1), con estrategia multi-término OR/AND
- *    (ver buscarUsuarios: "Julian Celis" encuentra firstname="Julian"
- *    y realname="Celis" en cualquier campo y sin exigir consecutivas).
+ *    o login (field 1). Todos los criterios van con link OR: la API flat de
+ *    GLPI no agrupa AND multi-término, así que se trae el conjunto OR y se
+ *    rankea en Java por cuántos términos coincide cada usuario.
  * 3. Pedir explícitamente las columnas ID (2), login (1), firstname (9)
  *    y realname (34) con forcedisplay.
  * 4. Construir el nombre completo: firstname + " " + realname.
- * 5. Limitar resultados a 10 (range=0-9).
+ * 5. Traer range=0-99, ordenar por cobertura de términos y devolver los 10 mejores.
  *
  * La autenticación y el HttpClient son compartidos a través de GlpiClient.
  *
@@ -72,29 +73,32 @@ public class UsuarioService {
         }
 
         try {
-            int total = tokens.length * 3;
+            // NOTA: todos los criterios van enlazados con OR (nunca AND).
+            // La API flat de GLPI no agrupa "(term1 EN f9/f34/f1) AND (term2 EN ...)":
+            // un AND entre grupos se ignora y devuelve usuarios que no cumplen todos
+            // los términos. Por eso se trae el conjunto OR (más amplio) con range
+            // amplio y se rankea por cobertura de términos en Java (ver ranking).
+            // IMPORTANTE: el [link]=OR va en TODOS los criterios, incluido el último.
+            // Si el último criterio no lleva link (p.ej. field=1, login), GLPI lo
+            // combina con AND del grupo anterior y una búsqueda que solo matchea
+            // en login devuelve 0 resultados.
             StringBuilder query = new StringBuilder("?");
+            int p = 0;
 
-            for (int t = 0; t < tokens.length; t++) {
+            for (String token : tokens) {
                 String valor = URLEncoder.encode(
-                        tokens[t],
+                        token,
                         StandardCharsets.UTF_8
                 );
 
                 for (int f = 0; f < 3; f++) {
-                    int p = t * 3 + f;
                     String campo = (f == 0) ? "9" : (f == 1) ? "34" : "1";
                     query.append("criteria[").append(p).append("][field]=").append(campo)
                             .append("&criteria[").append(p).append("][searchtype]=contains")
-                            .append("&criteria[").append(p).append("][value]=").append(valor);
-                    if (p < total - 1) {
-                        // Dentro del grupo: OR entre campos del mismo término.
-                        // Entre grupos: AND entre términos (borde % 3 == 0).
-                        boolean esBordeDeGrupo = ((p + 1) % 3 == 0);
-                        query.append("&criteria[").append(p).append("][link]=")
-                                .append(esBordeDeGrupo ? "AND" : "OR");
-                    }
+                            .append("&criteria[").append(p).append("][value]=").append(valor)
+                            .append("&criteria[").append(p).append("][link]=OR");
                     query.append("&");
+                    p++;
                 }
             }
 
@@ -102,14 +106,17 @@ public class UsuarioService {
                     .append("&forcedisplay[1]=1")
                     .append("&forcedisplay[2]=9")
                     .append("&forcedisplay[3]=34")
-                    .append("&range=0-9");
+                    .append("&range=0-99");
 
             JsonNode root = glpiClient.search("User", query.toString());
             JsonNode data = root.path("data");
 
+            List<UsuarioResponse> encontrados = new ArrayList<>();
+            List<Integer> puntajes = new ArrayList<>();
+
             if (data.isArray()) {
                 for (JsonNode item : data) {
-                    agregarUsuario(resultados, extraerId(item), item);
+                    agregarConPuntaje(encontrados, puntajes, extraerId(item), item, tokens);
                 }
             } else {
                 Iterator<Map.Entry<String, JsonNode>> fields = data.fields();
@@ -121,8 +128,20 @@ public class UsuarioService {
                     } catch (NumberFormatException e) {
                         id = extraerId(entry.getValue());
                     }
-                    agregarUsuario(resultados, id, entry.getValue());
+                    agregarConPuntaje(encontrados, puntajes, id, entry.getValue(), tokens);
                 }
+            }
+
+            // Ranking: primero los que coinciden con más términos, luego se quedan 10.
+            List<Integer> indice = new ArrayList<>();
+            for (int i = 0; i < encontrados.size(); i++) {
+                indice.add(i);
+            }
+            indice.sort((a, b) -> puntajes.get(b) - puntajes.get(a));
+
+            int limite = Math.min(10, indice.size());
+            for (int i = 0; i < limite; i++) {
+                resultados.add(encontrados.get(indice.get(i)));
             }
 
         } catch (Exception e) {
@@ -130,6 +149,41 @@ public class UsuarioService {
         }
 
         return resultados;
+    }
+
+    /**
+     * Agrega un usuario a las listas junto con su puntaje de cobertura:
+     * cuántos términos de la búsqueda aparecen en su nombre o login.
+     */
+    private void agregarConPuntaje(List<UsuarioResponse> encontrados,
+                                   List<Integer> puntajes,
+                                   int id,
+                                   JsonNode item,
+                                   String[] tokens) {
+        if (id <= 0) {
+            return;
+        }
+
+        String firstname = getFieldValue(item, "9");
+        String realname = getFieldValue(item, "34");
+        String login = getFieldValue(item, "1");
+
+        String nombreCompleto = (firstname + " " + realname).trim();
+
+        if (nombreCompleto.isEmpty() && login.isEmpty()) {
+            return;
+        }
+
+        String full = (nombreCompleto + " " + login).toLowerCase(Locale.ROOT);
+        int puntaje = 0;
+        for (String token : tokens) {
+            if (full.contains(token.toLowerCase(Locale.ROOT))) {
+                puntaje++;
+            }
+        }
+
+        encontrados.add(new UsuarioResponse(id, nombreCompleto, login));
+        puntajes.add(puntaje);
     }
 
     /**
@@ -149,31 +203,6 @@ public class UsuarioService {
             return idNode.asInt(-1);
         }
         return item.path("2").asInt(-1);
-    }
-
-    /**
-     * Agrega un usuario a la lista si tiene id válido y algún dato útil.
-     *
-     * @param resultados Lista donde se acumulan los resultados.
-     * @param id         Id del usuario en GLPI.
-     * @param item       Nodo JSON del usuario (login/firstname/realname).
-     */
-    private void agregarUsuario(List<UsuarioResponse> resultados, int id, JsonNode item) {
-        if (id <= 0) {
-            return;
-        }
-
-        String firstname = getFieldValue(item, "9");
-        String realname = getFieldValue(item, "34");
-        String login = getFieldValue(item, "1");
-
-        String nombreCompleto = (firstname + " " + realname).trim();
-
-        if (nombreCompleto.isEmpty() && login.isEmpty()) {
-            return;
-        }
-
-        resultados.add(new UsuarioResponse(id, nombreCompleto, login));
     }
 
     /**
