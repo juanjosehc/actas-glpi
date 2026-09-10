@@ -1,0 +1,64 @@
+# =========================
+# Entorno y secretos
+# =========================
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+
+# =========================
+# Java / Maven
+# =========================
+target/
+*.class
+*.log
+logs/
+dependency-reduced-pom.xml
+
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.npm/
+.cache/
+
+# =========================
+# Herramientas de IA (no versionar)
+# =========================
+.claude/
+.claude-flow/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.cursorrules
+.aider*
+.continue/
+.windsurf/
+.codex/
+.gemini/
+.specstory/
+.github/copilot-instructions.md
+opencode.json
+opencode.jsonc
+opencode.json5
+.mcp.json
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# =========================
+# Sistema operativo / editor
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.iml
+.vscode/*
+!.vscode/settings.json
