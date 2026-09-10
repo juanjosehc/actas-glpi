@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document
         .getElementById("btn-marcar-todo")
-        ?.addEventListener("click", marcarTodosLosChecks);
+        ?.addEventListener("click", marcarPredeterminado);
 
     document
         .getElementById("btn-desmarcar-todo")
@@ -932,17 +932,26 @@ function cerrarTodosLosAccordions() {
 }
 
 /**
- * Marca todos los checkboxes del checklist (chk_1 a chk_36).
+ * Marca todos los checkboxes del checklist (chk_1 a chk_36)
+ * EXCEPTO los que suelen ser excepciones por equipo:
+ * NetBIOS Deshabilitado (19), Wake On LAN (20),
+ * Actualización Java Desactivada (21),
+ * Actualización Adobe Reader Desactivada (22),
+ * OCS Inventory (32) y toda la sección "Áreas Específicas" (33-36).
  * También abre todos los acordeones para que el usuario
  * vea las opciones marcadas.
  */
-function marcarTodosLosChecks() {
+function marcarPredeterminado() {
+
+    const excluidos = new Set(
+        ["chk_19", "chk_20", "chk_21", "chk_22", "chk_32",
+            "chk_33", "chk_34", "chk_35", "chk_36"]);
 
     document
         .querySelectorAll('input[type="checkbox"][id^="chk_"]')
         .forEach(check => {
 
-            check.checked = true;
+            check.checked = !excluidos.has(check.id);
 
         });
 

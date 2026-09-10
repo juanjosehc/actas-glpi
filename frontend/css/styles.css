@@ -11,7 +11,10 @@ html, body{
     font-family: Arial;
     margin: 0;
     min-height: 100vh;
-    
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+
 }
 
 /* =========================
@@ -124,6 +127,52 @@ button{
     #acta-layout,
     #acta-formateo-layout {
         grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   NAVBAR RESPONSIVE
+   ========================= */
+
+@media (max-width: 640px) {
+    #acta-entrega-page {
+        padding: 16px;
+    }
+
+    .navbar-corporativo {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px 8px;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+    }
+
+    .navbar-left {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .navbar-logo {
+        height: 42px;
+    }
+
+    .navbar-title {
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    .navbar-right {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        gap: 6px;
+    }
+
+    .nav-link {
+        padding: 8px 10px;
+        font-size: 0.82rem;
+        border-radius: 8px;
     }
 }
 
@@ -294,6 +343,12 @@ textarea {
     padding: 40px;
 
     box-sizing: border-box;
+
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    width: 100%;
 
     
 
@@ -696,7 +751,8 @@ textarea {
 }
 
 #datos-acta-section .card.border {
-    height: calc(75vh - 100px);
+    height: auto;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -904,6 +960,58 @@ textarea {
 }
 
 /* =========================
+   CABECERA "HARDWARE Y SOFTWARE"
+   =========================
+   El título de esta card es más largo que el de "Equipos", así que la
+   fila título + botón no cabe en la columna. Medido en Chrome:
+   título 24px = 245px + botón "Añadir Hardware" = 146px = 391px,
+   mientras la columna ofrece 417px en pantalla grande, 365px a 1280
+   y ~300px antes de pasar a una sola columna.
+   Solución: se recorta el espacio muerto de ESTA cabecera y el botón
+   cambia a una etiqueta compacta cuando su propio ancho disponible
+   (container query, no viewport) baja de 400px. Nunca nowrap ni
+   overflow: cuando no cabe nada, apila como el resto del responsive.
+   No se tocan alturas, scroll ni las demás cards. */
+
+#hardware-section .section-header {
+    gap: 0;
+    container: hardware-header / inline-size;
+}
+
+#hardware-section .section-header .card-title {
+    padding-right: 0;
+}
+
+#hardware-section .section-header .btn {
+    padding-inline: 12px;
+}
+
+.btn-texto-compacto {
+    display: none;
+}
+
+@container hardware-header (max-width: 399px) {
+    #hardware-section .section-header .btn-texto-completo {
+        display: none;
+    }
+
+    #hardware-section .section-header .btn-texto-compacto {
+        display: inline;
+    }
+}
+
+/* Último escalón: columnas muy estrechas (3 columnas entre 1025 y
+   ~1150px de viewport). El título baja a 1.25rem con line-height fijo
+   en 2rem, de modo que la altura de la cabecera y la posición de la
+   divisoria NO cambian. Por debajo de esto ya no cabe: apila. */
+@container hardware-header (max-width: 354px) {
+    #hardware-section .section-header .card-title {
+        font-size: 1.25rem;
+        line-height: 2rem;
+    }
+}
+
+/* =========================
    RESPONSIVE - BOTONES EN CARDS
    ========================= */
 
@@ -913,7 +1021,7 @@ textarea {
     }
 
     .section-header .card-title {
-        flex: 1 0 100%;
+        flex: 1 1 auto;
         margin: 0;
     }
 
@@ -924,10 +1032,59 @@ textarea {
     }
 }
 
+/* Checklist: los botones de acción deben hacer wrap y
+   apilarse antes de desbordar el contenedor */
+#checklist-card .flex.gap-2 {
+    flex-wrap: wrap;
+}
+
+/* El .btn de FlyonUI usa height fija (--size) + flex-wrap:nowrap,
+   que comprime el texto cuando hace wrap en pantallas pequeñas.
+   Se permite que el contenido defina la altura. */
+#checklist-card .flex.gap-2 .btn {
+    height: auto;
+    min-height: 0;
+    flex-wrap: wrap;
+    white-space: normal;
+    align-items: center;
+}
+
 @media (max-width: 480px) {
+    .page-header h1,
+    .hero-header h1 {
+        font-size: 1.6rem;
+        letter-spacing: 0;
+        overflow-wrap: break-word;
+    }
+
     .section-header button {
         width: 100%;
         padding: 10px;
         font-size: 0.85rem;
+    }
+
+    #checklist-card .flex.gap-2 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #checklist-card .flex.gap-2 .btn {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* En móvil la cabecera ya se apila y sobra ancho: vuelve la etiqueta
+       completa y la tipografía normal, igual que las demás cards. */
+    #hardware-section .section-header .btn-texto-completo {
+        display: inline;
+    }
+
+    #hardware-section .section-header .btn-texto-compacto {
+        display: none;
+    }
+
+    #hardware-section .section-header .card-title {
+        font-size: 1.5rem;
+        line-height: 2rem;
     }
 }
