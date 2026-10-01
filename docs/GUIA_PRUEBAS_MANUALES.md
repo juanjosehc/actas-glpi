@@ -84,6 +84,62 @@ El checkbox de SO se marca según coincidencia **exacta**:
 | `Mac OS` | `macos` |
 | `Windows` (o cualquier otro) | ninguna (todas vacías) |
 
+### 3.4 Modalidad del acta: equipo o periférico
+
+La card "Activo Principal" tiene un selector **Modalidad del acta** que aplica a
+toda la entrega: una misma acta **no puede mezclar** equipos y periféricos. Por
+defecto queda **Equipo**, de modo que el flujo GLPI no cambia para quien entrega
+equipos. Los bloques heredan la modalidad; no se elige tipo por bloque.
+
+| # | Caso | Pasos | Resultado esperado |
+|---|------|-------|--------------------|
+| AP1 | Modalidad por defecto | Abrir la página | **Equipo** marcado. El bloque muestra Serial y botón Buscar; el checklist y Hardware y Software están visibles |
+| AP2 | Entrega de equipo | Modalidad Equipo, serial existente, clic Buscar, completar inventario | Idéntico al flujo anterior: `eq_1_*` con marca/tipo/modelo traídos de GLPI |
+| AP3 | Cambio a periférico | Marcar **Periférico** | El título pasa a "Periférico 1"; desaparece el campo Serial con su botón Buscar y aparecen, en este orden, **Descripción del periférico** (obligatoria), **Inventario**, Marca, Modelo y Serial, **todos campos de texto libre** (ningún desplegable). La card **Hardware y Software** y la **Lista de Chequeo** desaparecen por completo: el layout queda en 2 columnas (Datos del Acta + Activo Principal), sin huecos ni mensajes |
+| AP4 | Sin actas mixtas | En modalidad Periférico, pulsar **Añadir Activo** 2 veces | Los 3 bloques salen como Periférico, numerados 1..3, todos con el panel de periférico. **No existe** ningún control para convertirlos en Equipo |
+| AP5 | Entrega exclusiva de periférico | 1 bloque en Periférico con Descripción; **sin** llenar Número SAC ni Sistema Operativo | ZIP `ActaEntrega_SINSERIAL_{nombre}.zip` que contiene **solo** `ActaEntrega_*.docx`. **No** hay `Checklist_*.docx`. La fila del activo sale con la descripción en la columna Tipo y Serial/Inventario vacíos |
+| AP5b | Múltiples periféricos | 2 bloques en Periférico con descripciones distintas | El DOCX imprime `eq_1_*` y `eq_2_*` con cada descripción, en el orden de los bloques |
+| AP5c | Inventario del periférico | Periférico con Descripción e **Inventario** `INV-12345` | El DOCX llena `eq_1_inventario`: la fila sale `Marca \| Tipo \| Modelo \| Serial \| INV-12345`, con el inventario en **su propia columna**, no pegado a la descripción |
+| AP5d | Inventario vacío | Periférico con Descripción y **sin** Inventario | El acta se genera igual (`ActaEntrega_SINSERIAL_*.zip`); la columna Inventario queda vacía. No hay error ni validación |
+| AP5e | Inventario libre | Probar `INV-12345`, `CF-000567`, `MON-2026-18`, `458712` | Todos se aceptan tal cual, sin formato impuesto: admite letras, números y combinaciones |
+| AP6 | Validación de periférico | Enviar en modo Periférico sin Descripción | Se marca en rojo Descripción; Marca, Modelo, Serial e Inventario **no** se exigen. Tampoco se exigen Número SAC ni Sistema Operativo |
+| AP6b | Descripción libre | Escribir `Hub USB-C`, `Base refrigerante para portátil`, `Monitor Samsung 24"` | Cualquier texto se acepta y se imprime tal cual en la columna Tipo del DOCX: no hay catálogo ni lista cerrada |
+| AP7 | Volver a Equipo | Marcar Periférico y luego Equipo | Se restauran el formulario de equipo, el botón Buscar, el checklist y la card de Hardware y Software (vuelve a 3 columnas), sin marcas de error residuales |
+| AP8 | Límite de bloques | Añadir un 4º activo | Aviso "Se alcanzó el máximo permitido de 3 activos"; el bloque no se agrega |
+| AP9 | Compatibilidad | Abrir una página de devolución o formateo seguro | No cambian: siguen usando solo el bloque de equipo |
+| AP10 | Equipo sin SAC | Modalidad Equipo, sin Número SAC | HTTP 400 "El numero_sac es obligatorio" (la validación solo se relaja en modalidad Periférico) |
+
+> El periférico se envía al backend con la **misma estructura** que un equipo
+> (`serial`, `marca`, `tipo`, `modelo`, `inventario`), así que no cambian ni el DTO
+> `EquipoItem` ni las plantillas DOCX. La **Descripción** es texto libre y se envía
+> en el campo `tipo` (`Hub USB-C`), porque la tabla de la plantilla no tiene columna
+> de descripción. No hay catálogo de tipos: los especialistas entregan una variedad
+> que no se puede cerrar en una lista.
+>
+> La modalidad viaja en el campo `modo` del payload (`EQUIPO` / `PERIFERICO`). Si
+> no se envía, el backend asume `EQUIPO` y mantiene las validaciones de siempre, así
+> que las integraciones antiguas no se rompen. En modalidad `PERIFERICO` el backend
+> omite la generación del checklist y relaja `numero_sac` y `sistema_operativo`
+> (ambos se imprimen únicamente en la lista de chequeo).
+
+Pruebas automatizadas de esta lógica (no requieren navegador):
+
+```bash
+node frontend/js/app.test.js
+```
+
+Cubre mapeo de equipo, periférico sin serial, múltiples activos y la modalidad
+global (incluida la garantía de que un acta no puede mezclar tipos).
+
+Validación del DTO en el backend:
+
+```bash
+cd backend && mvn test -Dtest=ActaRequestTest
+```
+
+Cubre que `numero_sac` y `sistema_operativo` se exigen en modalidad Equipo (y
+cuando no se envía `modo`) pero no en modalidad Periférico.
+
 ---
 
 ## 4. Acta de devolución

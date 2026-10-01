@@ -37,8 +37,144 @@ LÍMITES DE REGISTROS (capacidad de plantillas DOCX)
 */
 const MAX_EQUIPOS = 3;
 const MAX_HARDWARE = 9;
-const MSG_MAX_EQUIPOS = "Se alcanzó el máximo permitido de 3 equipos.";
+const MSG_MAX_EQUIPOS = "Se alcanzó el máximo permitido de 3 activos.";
 const MSG_MAX_HARDWARE = "Se alcanzó el máximo permitido de 9 registros de Hardware y Software.";
+
+/*
+----------------------------------------------------
+ACTIVO PRINCIPAL (Equipo | Periférico)
+----------------------------------------------------
+
+Cada bloque de la card "Activo Principal" puede entregar un
+equipo (flujo GLPI actual) o un periférico suelto (mouse,
+teclado, monitor, etc.). El periférico se envía al backend con
+la MISMA forma que un equipo, por lo que ni el backend ni las
+plantillas DOCX necesitan cambios.
+*/
+
+/** Valores posibles de data-tipo-activo en cada bloque. */
+const ACTIVO_EQUIPO = "EQUIPO";
+const ACTIVO_PERIFERICO = "PERIFERICO";
+
+/** Contador para generar ids únicos de los bloques de activo. */
+let contadorActivos = 0;
+
+/**
+ * Modalidad actual del acta. La fija el primer bloque y la heredan
+ * todos los demás: una misma acta no puede mezclar equipos y
+ * periféricos. El DOM manda; esto es solo caché de lectura rápida.
+ */
+function modoActual() {
+
+    return (
+        document
+            .querySelector("[data-modo-radio]:checked")
+            ?.value || ACTIVO_EQUIPO
+    ).toUpperCase();
+
+}
+
+/** true si el acta está en modalidad Periférico. */
+function esModoPeriferico() {
+
+    return modoActual() === ACTIVO_PERIFERICO;
+
+}
+
+/**
+ * Campos obligatorios de un bloque de activo principal.
+ *
+ * Equipo     → serial e inventario (flujo actual).
+ * Periférico → solo la descripción. Marca, modelo y serial son
+ *              opcionales: no hay catálogo de tipos, el especialista
+ *              escribe lo que entrega.
+ *
+ * Pura: la usan validarEquipos() y las pruebas de app.test.js.
+ *
+ * @param {String} tipoActivo ACTIVO_EQUIPO o ACTIVO_PERIFERICO.
+ * @param {Number} index Posición del bloque (0-based) para el mensaje.
+ * @returns {Object[]} [{ selector, nombre }] de los campos obligatorios.
+ */
+function camposObligatoriosActivo(tipoActivo, index) {
+
+    const numero = index + 1;
+
+    if (tipoActivo === ACTIVO_PERIFERICO) {
+
+        return [
+            {
+                selector: "[data-per-descripcion]",
+                nombre: `Descripción del Periférico ${numero}`
+            }
+        ];
+
+    }
+
+    return [
+        {
+            selector: "[data-serial]",
+            nombre: `Serial del Equipo ${numero}`
+        },
+        {
+            selector: "[data-inventario]",
+            nombre: `Inventario del Equipo ${numero}`
+        }
+    ];
+
+}
+
+/**
+ * Construye la fila del activo principal tal como la espera el backend.
+ *
+ * El periférico se mapea a la misma estructura que un equipo
+ * (serial, marca, tipo, modelo, inventario) para reutilizar el
+ * DTO EquipoItem y las plantillas DOCX sin modificarlos.
+ *
+ * Pura: la usan generarActa() y las pruebas de app.test.js.
+ *
+ * @param {String} tipoActivo ACTIVO_EQUIPO o ACTIVO_PERIFERICO.
+ * @param {Object} valores Valores ya leídos del DOM.
+ * @returns {Object} Fila de activo para el payload.
+ */
+function construirActivoPrincipal(tipoActivo, valores) {
+
+    if (tipoActivo === ACTIVO_PERIFERICO) {
+
+        return {
+
+            serial: valores.serial || "",
+
+            marca: valores.marca || "",
+
+            // La tabla de activos de la plantilla DOCX no tiene columna
+            // "Descripción": se envía en la columna Tipo, que es donde
+            // se lee qué se entregó.
+            // ponytail: añadir columna propia cuando se edite la plantilla.
+            tipo: valores.descripcion || "",
+
+            modelo: valores.modelo || "",
+
+            inventario: valores.inventario || ""
+
+        };
+
+    }
+
+    return {
+
+        serial: valores.serial || "",
+
+        marca: valores.marca || "",
+
+        tipo: valores.tipo || "",
+
+        modelo: valores.modelo || "",
+
+        inventario: valores.inventario || ""
+
+    };
+
+}
 
 /**
  * Genera el acta de entrega y la lista de chequeo.
@@ -63,10 +199,15 @@ async function generarActa() {
             "cargo_recibe",
             "entregado_por",
             "cargo_entrega",
-            "asunto",
-            "numero_sac"
+            "asunto"
 
         ];
+
+        // numero_sac solo se imprime en la lista de chequeo, que no
+        // se genera en modalidad Periférico.
+        if (!esModoPeriferico()) {
+            camposObligatorios.push("numero_sac");
+        }
 
         let primerCampoInvalido = null;
 
@@ -83,10 +224,13 @@ async function generarActa() {
 
         });
 
+        // En modalidad Periférico no hay checklist ni SO: no se exigen.
         const sistemaOperativo =
-            document.querySelector(
-                'input[name="so"]:checked'
-            );
+            esModoPeriferico()
+                ? true
+                : document.querySelector(
+                    'input[name="so"]:checked'
+                );
 
         if (!sistemaOperativo) {
 
@@ -171,30 +315,36 @@ async function generarActa() {
 
         }
 
-        document
-            .querySelectorAll(".hardware-item")
-            .forEach(item => {
+        // En modalidad Periférico la card está oculta y no aplica:
+        // se envía vacía aunque queden bloques en el DOM.
+        if (!esModoPeriferico()) {
 
-                hardware.push({
+            document
+                .querySelectorAll(".hardware-item")
+                .forEach(item => {
 
-                    tipo:
-                        item.querySelector(
-                            "[data-tipo]"
-                        ).value,
+                    hardware.push({
 
-                    descripcion:
-                        item.querySelector(
-                            "[data-descripcion]"
-                        ).value,
+                        tipo:
+                            item.querySelector(
+                                "[data-tipo]"
+                            ).value,
 
-                    programa:
-                        item.querySelector(
-                            "[data-programa]"
-                        ).value
+                        descripcion:
+                            item.querySelector(
+                                "[data-descripcion]"
+                            ).value,
+
+                        programa:
+                            item.querySelector(
+                                "[data-programa]"
+                            ).value
+
+                    });
 
                 });
 
-            });
+        }
 
         const equipos = [];
 
@@ -202,34 +352,76 @@ async function generarActa() {
             .querySelectorAll(".equipo-item")
             .forEach(item => {
 
-                equipos.push({
+                const esPeriferico =
+                    item.dataset.tipoActivo === ACTIVO_PERIFERICO;
 
-                    serial:
-                        item.querySelector(
-                            "[data-serial]"
-                        ).value,
+                equipos.push(
 
-                    marca:
-                        item.querySelector(
-                            "[data-marca]"
-                        ).value,
+                    construirActivoPrincipal(
 
-                    tipo:
-                        item.querySelector(
-                            "[data-tipo]"
-                        ).value,
+                        item.dataset.tipoActivo,
 
-                    modelo:
-                        item.querySelector(
-                            "[data-modelo]"
-                        ).value,
+                        esPeriferico
+                            ? {
 
-                    inventario:
-                        item.querySelector(
-                            "[data-inventario]"
-                        ).value
+                                serial:
+                                    item.querySelector(
+                                        "[data-per-serial]"
+                                    ).value,
 
-                });
+                                marca:
+                                    item.querySelector(
+                                        "[data-per-marca]"
+                                    ).value,
+
+                                modelo:
+                                    item.querySelector(
+                                        "[data-per-modelo]"
+                                    ).value,
+
+                                descripcion:
+                                    item.querySelector(
+                                        "[data-per-descripcion]"
+                                    ).value,
+
+                                inventario:
+                                    item.querySelector(
+                                        "[data-per-inventario]"
+                                    ).value
+
+                            }
+                            : {
+
+                                serial:
+                                    item.querySelector(
+                                        "[data-serial]"
+                                    ).value,
+
+                                marca:
+                                    item.querySelector(
+                                        "[data-marca]"
+                                    ).value,
+
+                                tipo:
+                                    item.querySelector(
+                                        "[data-tipo]"
+                                    ).value,
+
+                                modelo:
+                                    item.querySelector(
+                                        "[data-modelo]"
+                                    ).value,
+
+                                inventario:
+                                    item.querySelector(
+                                        "[data-inventario]"
+                                    ).value
+
+                            }
+
+                    )
+
+                );
 
             });
 
@@ -244,6 +436,9 @@ async function generarActa() {
         }
 
         const payload = {
+
+            modo:
+                modoActual(),
 
             fecha:
                 document.getElementById("fecha").value,
@@ -410,6 +605,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnEquipo) {
         btnEquipo.addEventListener("click", agregarEquipo);
     }
+
+    document
+        .querySelectorAll("[data-modo-radio]")
+        .forEach(radio => {
+
+            radio.addEventListener("change", () => {
+
+                aplicarModoGlobal(radio.value);
+
+            });
+
+        });
 
     agregarEquipo();
     agregarHardware();
@@ -652,14 +859,17 @@ ADMINISTRACIÓN DINÁMICA DE EQUIPOS
 */
 
 /**
- * Agrega un nuevo bloque de equipo al formulario.
+ * Agrega un nuevo bloque de activo principal al formulario.
  *
- * Cada bloque contiene: serial, botón buscar, marca,
- * tipo, modelo e inventario. Marca/tipo/modelo se
- * autocompletan desde GLPI al hacer click en "Buscar".
- * Se validan serial, inventario y estado antes de enviar.
- * Límite máximo: 3 equipos (capacidad de la plantilla DOCX).
- * Límite mínimo: 1 equipo (no se puede eliminar el último).
+ * Cada bloque permite elegir el tipo de activo:
+ * - Equipo (por defecto): serial, botón Buscar, marca, tipo,
+ *   modelo e inventario. Marca/tipo/modelo se autocompletan
+ *   desde GLPI al hacer click en "Buscar".
+ * - Periférico: formulario simplificado (tipo, marca, modelo,
+ *   serial y descripción) sin consulta a GLPI y con serial opcional.
+ *
+ * Límite máximo: 3 activos (capacidad de la plantilla DOCX).
+ * Límite mínimo: 1 activo (no se puede eliminar el último).
  */
 function agregarEquipo() {
 
@@ -686,6 +896,12 @@ function agregarEquipo() {
 
     equipo.className = "equipo-item";
 
+    // El bloque hereda la modalidad global del acta: no se elige
+    // tipo por bloque, para que no existan actas mixtas.
+    equipo.dataset.tipoActivo = modoActual();
+
+    const idBase = `activo-${++contadorActivos}`;
+
     equipo.innerHTML = `
 
         <div class="card border border-base-300 shadow-sm">
@@ -708,6 +924,9 @@ function agregarEquipo() {
                     </button>
 
                 </div>
+
+                <div data-panel-equipo>
+
                 <div class="input-floating w-full mb-1">
 
                     <input
@@ -788,6 +1007,87 @@ function agregarEquipo() {
 
             </div>
 
+                </div>
+
+                <div data-panel-periferico hidden>
+
+                    <!-- Orden alineado con las columnas de la plantilla
+                         DOCX (Marca, Tipo, Modelo, Serial, Nro. Inventario)
+                         para que el usuario diligencie en el mismo orden en
+                         que verá los datos en el acta final. "Descripción
+                         del periférico" ocupa la posición de Tipo. -->
+
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            class="input"
+                            placeholder=" "
+                            data-per-marca />
+
+                        <label class="input-floating-label">
+                            Marca (opcional)
+                        </label>
+
+                    </div>
+
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            class="input"
+                            placeholder=" "
+                            data-per-descripcion />
+
+                        <label class="input-floating-label">
+                            Descripción del periférico
+                        </label>
+
+                        <span class="helper-text ps-3">
+                            Campo obligatorio. Ej: Mouse inalámbrico Logitech M185
+                        </span>
+
+                    </div>
+
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            class="input"
+                            placeholder=" "
+                            data-per-modelo />
+
+                        <label class="input-floating-label">
+                            Modelo (opcional)
+                        </label>
+
+                    </div>
+
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            class="input"
+                            placeholder=" "
+                            data-per-serial />
+
+                        <label class="input-floating-label">
+                            Serial (opcional)
+                        </label>
+
+                    </div>
+
+                    <div class="input-floating w-full">
+
+                        <input
+                            class="input"
+                            placeholder=" "
+                            data-per-inventario />
+
+                        <label class="input-floating-label">
+                            Inventario (opcional)
+                        </label>
+
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
@@ -796,8 +1096,10 @@ function agregarEquipo() {
 
     container.appendChild(equipo);
 
+    aplicarModoAlBloque(equipo);
+
     equipo
-        .querySelectorAll(".input")
+        .querySelectorAll(".input, .textarea")
         .forEach(campo => {
 
             campo.addEventListener("input", () => {
@@ -812,7 +1114,7 @@ function agregarEquipo() {
 
         });
 
-    renumerarEquipos();
+    renumerarActivos();
 
     equipo
         .querySelector("[data-buscar]")
@@ -827,7 +1129,7 @@ function agregarEquipo() {
             ) {
 
                 mostrarMensaje(
-                    "Debe existir al menos un equipo",
+                    "Debe existir al menos un activo",
                     "warning"
                 );
 
@@ -837,7 +1139,88 @@ function agregarEquipo() {
 
             equipo.remove();
 
-            renumerarEquipos();
+            renumerarActivos();
+
+        });
+
+}
+
+/**
+ * Muestra el panel que corresponde a la modalidad del acta en un
+ * bloque de activo, y descarta las marcas de validación pendientes
+ * (si no, quedarían campos en rojo que nunca se enviaron).
+ *
+ * @param {HTMLElement} equipo Bloque .equipo-item.
+ */
+function aplicarModoAlBloque(equipo) {
+
+    const esPeriferico = esModoPeriferico();
+
+    equipo.dataset.tipoActivo =
+        esPeriferico ? ACTIVO_PERIFERICO : ACTIVO_EQUIPO;
+
+    equipo
+        .querySelector("[data-panel-equipo]")
+        .hidden = esPeriferico;
+
+    equipo
+        .querySelector("[data-panel-periferico]")
+        .hidden = !esPeriferico;
+
+    equipo
+        .querySelectorAll(".is-invalid")
+        .forEach(campo => {
+
+            campo.classList.remove("is-invalid");
+
+        });
+
+    renumerarActivos();
+
+}
+
+/**
+ * Aplica la modalidad global del acta a toda la página.
+ *
+ * En modalidad Periférico se oculta la lista de chequeo y la card
+ * de Hardware y Software (con un aviso en su lugar), y el acta
+ * generada no incluye checklist. En modalidad Equipo no se toca
+ * nada: es el flujo actual.
+ *
+ * @param {String} modo ACTIVO_EQUIPO o ACTIVO_PERIFERICO.
+ */
+function aplicarModoGlobal(modo) {
+
+    const esPeriferico = modo === ACTIVO_PERIFERICO;
+
+    document
+        .getElementById("acta-entrega-page")
+        ?.classList.toggle("modo-periferico", esPeriferico);
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach(aplicarModoAlBloque);
+
+}
+
+/**
+ * Actualiza los títulos "Equipo N" / "Periférico N" de cada bloque.
+ *
+ * Sustituye a renumerarEquipos() de ui.js en esta página, porque
+ * el título ahora depende del tipo de activo de cada bloque.
+ * ui.js se mantiene intacto para devolución y formateo seguro.
+ */
+function renumerarActivos() {
+
+    document
+        .querySelectorAll(".equipo-item")
+        .forEach((equipo, index) => {
+
+            const esPeriferico =
+                equipo.dataset.tipoActivo === ACTIVO_PERIFERICO;
+
+            equipo.querySelector("h4").textContent =
+                `${esPeriferico ? "Periférico" : "Equipo"} ${index + 1}`;
 
         });
 
@@ -869,27 +1252,30 @@ VALIDACIONES
 */
 
 /**
- * Valida los equipos agregados dinámicamente.
+ * Valida los activos agregados dinámicamente.
  *
- * En entrega valida por equipo: serial e inventario.
+ * Equipo     → serial e inventario (flujo actual).
+ * Periférico → tipo y descripción (sin serial ni GLPI).
  * Delega el motor al helper compartido validarEquiposPorBloque.
  *
  * @returns {Object|null} Primer error: { elemento, nombre } o null si todo es válido.
  */
 function validarEquipos() {
 
-    return validarEquiposPorBloque((equipo, index) => [
+    return validarEquiposPorBloque((equipo, index) =>
 
-        {
-            elemento: equipo.querySelector("[data-serial]"),
-            nombre: `Serial del Equipo ${index + 1}`
-        },
-        {
-            elemento: equipo.querySelector("[data-inventario]"),
-            nombre: `Inventario del Equipo ${index + 1}`
-        }
+        camposObligatoriosActivo(
+            equipo.dataset.tipoActivo,
+            index
+        ).map(campo => ({
 
-    ]);
+            elemento: equipo.querySelector(campo.selector),
+
+            nombre: campo.nombre
+
+        }))
+
+    );
 
 }
 
@@ -974,5 +1360,27 @@ function desmarcarTodosLosChecks() {
         });
 
     cerrarTodosLosAccordions();
+
+}
+
+/*
+----------------------------------------------------
+EXPORT PARA PRUEBAS (Node)
+----------------------------------------------------
+
+Este archivo es un script de navegador: en el navegador `module`
+no existe y el bloque se ignora. En Node permite probar la lógica
+pura del activo principal desde app.test.js.
+*/
+if (typeof module !== "undefined") {
+
+    module.exports = {
+        ACTIVO_EQUIPO,
+        ACTIVO_PERIFERICO,
+        modoActual,
+        esModoPeriferico,
+        camposObligatoriosActivo,
+        construirActivoPrincipal
+    };
 
 }

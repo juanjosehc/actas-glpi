@@ -1,5 +1,6 @@
 package com.empresa.actas.dto.request;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -49,11 +50,40 @@ public class ActaRequest {
 
     private Map<String, Boolean> checklist = new HashMap<>();
 
-    @NotBlank(message = "El numero_sac es obligatorio")
     private String numero_sac;
 
     private String observaciones = "";
 
-    @NotBlank(message = "El sistema operativo es obligatorio")
     private String sistema_operativo;
+
+    /**
+     * Modalidad del acta: "EQUIPO" (por defecto) o "PERIFERICO".
+     *
+     * En una entrega exclusiva de periféricos no hay lista de chequeo
+     * ni hardware/software, así que numero_sac y sistema_operativo
+     * dejan de ser obligatorios. Si no se envía, se asume EQUIPO y se
+     * mantienen las validaciones de siempre.
+     */
+    private String modo;
+
+    /** true si el acta es una entrega exclusiva de periféricos. */
+    public boolean esModoPeriferico() {
+        return "PERIFERICO".equalsIgnoreCase(modo);
+    }
+
+    /**
+     * numero_sac solo se imprime en la lista de chequeo, que no se
+     * genera en modalidad Periférico.
+     */
+    @AssertTrue(message = "El numero_sac es obligatorio")
+    private boolean isNumeroSacValido() {
+        return esModoPeriferico() || (numero_sac != null && !numero_sac.isBlank());
+    }
+
+    /** El sistema operativo también pertenece solo al checklist. */
+    @AssertTrue(message = "El sistema operativo es obligatorio")
+    private boolean isSistemaOperativoValido() {
+        return esModoPeriferico()
+                || (sistema_operativo != null && !sistema_operativo.isBlank());
+    }
 }

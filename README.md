@@ -48,6 +48,7 @@ actas-glpi/
 │   ├── img/                     # logo.png
 │   └── package.json             # Tailwind CSS + FlyonUI
 ├── docs/
+│   ├── COPILOT_CONTEXT.md           # Contexto permanente del proyecto (para asistentes IA)
 │   ├── MANUAL_USUARIO.md            # Manual de usuario
 │   ├── MANTENIMIENTO.md             # Guía de mantenimiento
 │   ├── GUIA_DESARROLLADOR.md        # Guía de onboarding para nuevos desarrolladores

@@ -28,6 +28,6 @@ const API_URL = (() => {
 
     const host = window.location?.hostname || "127.0.0.1";
 
-    return "http://" + host + ":8001";
+    return "http://" + host + ":8087";
 
 })();

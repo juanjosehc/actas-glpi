@@ -85,6 +85,59 @@
 
         </div>
 
+        <!-- Modalidad GLOBAL del acta: no es una propiedad del Activo
+             Principal, sino una decisión que afecta a todo el
+             documento (activos admitidos, lista de chequeo,
+             validaciones y generación). Por eso vive aquí, entre el
+             hero y las tres columnas. -->
+        <div class="modo-selector">
+
+            <span class="modo-titulo">
+                Modalidad de la entrega
+            </span>
+
+            <div class="flex items-center gap-2">
+
+                <input
+                    type="radio"
+                    class="radio radio-inset radio-primary"
+                    id="modo-equipo"
+                    name="modo-activo"
+                    value="EQUIPO"
+                    data-modo-radio
+                    checked />
+
+                <label
+                    class="label-text"
+                    for="modo-equipo">
+
+                    Equipo
+
+                </label>
+
+            </div>
+
+            <div class="flex items-center gap-2">
+
+                <input
+                    type="radio"
+                    class="radio radio-inset radio-primary"
+                    id="modo-periferico"
+                    name="modo-activo"
+                    value="PERIFERICO"
+                    data-modo-radio />
+
+                <label
+                    class="label-text"
+                    for="modo-periferico">
+
+                    Periférico
+
+                </label>
+
+            </div>
+
+        </div>
 
         <div id="acta-layout" class="three-panel-layout">
 
@@ -250,7 +303,7 @@
             </div>
 
             <!-- ========================= -->
-            <!-- EQUIPOS                   -->
+            <!-- ACTIVO PRINCIPAL          -->
             <!-- ========================= -->
 
             <div class="group">
@@ -264,15 +317,19 @@
                         <div class="section-header">
 
                             <h2 class="card-title">
-                                Equipos
+                                Activo Principal
                             </h2>
 
+                            <!-- Dos etiquetas: styles.css muestra la
+                                 completa cuando el encabezado tiene ancho
+                                 suficiente y la compacta cuando no. -->
                             <button
                                 type="button"
                                 id="btn-add-equipo"
                                 class="btn btn-outline">
 
-                                Añadir Equipo
+                                <span class="btn-texto-completo">Añadir Activo</span>
+                                <span class="btn-texto-compacto">+ Activo</span>
 
                             </button>
 
@@ -292,7 +349,8 @@
             <!-- HARDWARE / SOFTWARE       -->
             <!-- ========================= -->
 
-            <div class="group">
+            <!-- Se oculta por completo en modalidad Periférico. -->
+            <div class="group" id="hardware-group">
 
                 <section
                     id="hardware-section"
@@ -329,7 +387,6 @@
                             -->
 
                         </div>
-                        
 
                     </div>
 

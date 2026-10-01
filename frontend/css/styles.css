@@ -1088,3 +1088,96 @@ textarea {
         line-height: 2rem;
     }
 }
+/* =========================
+   MODALIDAD PERIFÉRICO
+   =========================
+
+   En una entrega exclusiva de periféricos no hay lista de
+   chequeo ni hardware/software: ambas cards desaparecen por
+   completo (sin reservar espacio ni mostrar avisos). */
+
+#acta-entrega-page.modo-periferico #checklist-section,
+#acta-entrega-page.modo-periferico #hardware-group {
+    display: none;
+}
+
+/* El acta de periférico usa 2 columnas (datos + activos) en vez
+   de 3, para que las cards no queden encogidas al desaparecer
+   Hardware y Software. */
+#acta-entrega-page.modo-periferico #acta-layout {
+    grid-template-columns: 1fr 1fr;
+}
+
+
+/* =========================
+   MODALIDAD GLOBAL DEL ACTA
+   =========================
+
+   La modalidad (Equipo / Periférico) no es una propiedad del
+   Activo Principal: decide qué activos se admiten, si hay lista
+   de chequeo, qué validaciones corren y qué documento se genera.
+   Por eso es una fila propia entre el hero y las tres columnas,
+   y no parte del encabezado de la columna central: ahí competía
+   por el ancho con el título y con "Añadir Activo".
+
+   Al salir de la columna, el encabezado de Activo Principal queda
+   idéntico al de las otras dos (título + botón en una línea) y las
+   tres cards arrancan a la misma altura sin ningún ajuste extra. */
+
+.modo-selector {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    gap: 8px 24px;
+
+    margin-bottom: 20px;
+
+}
+
+.modo-titulo {
+
+    font-weight: 600;
+    color: #1E3A8A;
+
+}
+
+/* Aislado del flujo del encabezado: el botón puede volver a
+   decidir su etiqueta por el ancho de la COLUMNA (322px a 1025px,
+   417px a 1440px) y no por el del viewport. */
+#equipos-section .section-header {
+
+    container: equipos-header / inline-size;
+
+}
+
+/* El título ocupa el ancho sobrante para que el botón quede
+   pegado a la derecha, como en Hardware y Software. */
+#equipos-section .section-header .card-title {
+
+    flex: 1 1 auto;
+    min-width: 0;
+
+}
+
+/* El botón comparte fila con el título y necesita 167 + 136 + 12 =
+   315px. Por debajo de ~380px de columna (3 columnas entre 1025 y
+   1200px, que dan 322-354px) pasa a etiqueta compacta, como ya hace
+   Hardware y Software, para no envolver y descuadrar la columna. */
+@container equipos-header (max-width: 379px) {
+
+    #equipos-section .section-header .btn-texto-completo {
+
+        display: none;
+
+    }
+
+    #equipos-section .section-header .btn-texto-compacto {
+
+        display: inline;
+
+    }
+
+}

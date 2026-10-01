@@ -25,6 +25,9 @@ import java.util.Map;
  * 5. Empaquetar ambos DOCX en un ZIP vía ZipService.
  * 6. Retornar ActaResponse con el nombre del ZIP.
  *
+ * En modalidad PERIFERICO (entrega exclusiva de periféricos) se omite
+ * la lista de chequeo: el ZIP lleva solo el acta de entrega.
+ *
  * Naming del ZIP: ActaEntrega_{SERIAL}_{NOMBRE}.zip
  */
 @Service
@@ -68,8 +71,6 @@ public class ActaService {
 
             Path rutaActa = wordService.generarActa(datos);
 
-            Path rutaChecklist = wordService.generarChecklist(datos);
-
             String serial = "SinSerial";
             if (request.getEquipos() != null && !request.getEquipos().isEmpty()) {
                 serial = NombreArchivoUtil.normalizarSerial(
@@ -82,7 +83,13 @@ public class ActaService {
             String nombreZip = base + ".zip";
             Path rutaZip = outputDir.resolve(nombreZip);
 
-            zipService.crearZip(rutaZip, rutaActa, rutaChecklist);
+            // Entrega exclusiva de periféricos: sin lista de chequeo.
+            if (request.esModoPeriferico()) {
+                zipService.crearZip(rutaZip, rutaActa);
+            } else {
+                Path rutaChecklist = wordService.generarChecklist(datos);
+                zipService.crearZip(rutaZip, rutaActa, rutaChecklist);
+            }
 
             return ActaResponse.ok(nombreZip);
 
