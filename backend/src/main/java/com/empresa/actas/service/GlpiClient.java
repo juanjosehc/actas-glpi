@@ -127,6 +127,26 @@ public class GlpiClient {
     }
 
     /**
+     * Obtiene un ítem completo de GLPI por su id.
+     *
+     * Necesario para campos que /search no expone como searchoption,
+     * por ejemplo el inventario ({@code otherserial}) de monitores y
+     * periféricos.
+     *
+     * @param itemtype Tipo de item GLPI (ej: "Monitor", "Peripheral").
+     * @param id       Id del ítem.
+     * @return JSON del ítem.
+     * @throws Exception Si la sesión falla o la respuesta no es válida.
+     */
+    public JsonNode getItem(String itemtype, int id) throws Exception {
+        String sessionToken = iniciarSesion();
+        String body = ejecutarGet(glpiUrl + "/" + itemtype + "/" + id,
+                "App-Token", appToken,
+                "Session-Token", sessionToken);
+        return objectMapper.readTree(body);
+    }
+
+    /**
      * GET con headers, devolviendo el cuerpo como string.
      * Aplica los timeouts, el SSLContext trust-all y el hostnameVerifier
      * por conexión (solo este cliente).

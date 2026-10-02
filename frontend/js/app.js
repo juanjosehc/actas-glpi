@@ -1011,11 +1011,35 @@ function agregarEquipo() {
 
                 <div data-panel-periferico hidden>
 
-                    <!-- Orden alineado con las columnas de la plantilla
-                         DOCX (Marca, Tipo, Modelo, Serial, Nro. Inventario)
-                         para que el usuario diligencie en el mismo orden en
-                         que verá los datos en el acta final. "Descripción
-                         del periférico" ocupa la posición de Tipo. -->
+                    <!-- El serial es el campo principal: alimenta la
+                         búsqueda en GLPI (Monitor o Peripheral) y
+                         precede a los datos que autocompleta. Los
+                         campos NO van disabled, a diferencia de la
+                         modalidad Equipo: si GLPI no encuentra el
+                         serial, el acta se diligencia a mano. -->
+
+                    <div class="input-floating w-full mb-1">
+
+                        <input
+                            type="text"
+                            class="input"
+                            placeholder=" "
+                            data-per-serial />
+
+                        <label class="input-floating-label">
+                            Serial (opcional)
+                        </label>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        data-per-buscar
+                        class="btn btn-outline mb-4">
+
+                        Buscar
+
+                    </button>
 
                     <div class="input-floating w-full mb-1">
 
@@ -1056,19 +1080,6 @@ function agregarEquipo() {
 
                         <label class="input-floating-label">
                             Modelo (opcional)
-                        </label>
-
-                    </div>
-
-                    <div class="input-floating w-full mb-1">
-
-                        <input
-                            class="input"
-                            placeholder=" "
-                            data-per-serial />
-
-                        <label class="input-floating-label">
-                            Serial (opcional)
                         </label>
 
                     </div>
@@ -1121,6 +1132,10 @@ function agregarEquipo() {
         .addEventListener("click", () => buscarEquipoBloque(equipo));
 
     equipo
+        .querySelector("[data-per-buscar]")
+        .addEventListener("click", () => buscarPerifericoBloque(equipo));
+
+    equipo
         .querySelector("[data-eliminar]")
         .addEventListener("click", () => {
 
@@ -1142,6 +1157,112 @@ function agregarEquipo() {
             renumerarActivos();
 
         });
+
+}
+
+/**
+ * Consulta GLPI por el serial del bloque en modalidad Periférico y
+ * auto completa marca, tipo (descripción) y modelo.
+ *
+ * Endpoint: GET /periferico/{serial}
+ *
+ * A diferencia de la modalidad Equipo, los campos NO se bloquean:
+ * si GLPI no conoce el serial, el bloque queda diligenciable a mano
+ * y solo se avisa. El servidor busca en Monitor y Peripheral, así
+ * que el frontend no necesita saber en cuál está registrado.
+ *
+ * @param {HTMLElement} equipo Bloque .equipo-item.
+ */
+async function buscarPerifericoBloque(equipo) {
+
+    const serial =
+        equipo.querySelector("[data-per-serial]").value.trim();
+
+    if (!serial) {
+
+        mostrarMensaje(
+            "Digite un serial para buscar",
+            "warning"
+        );
+
+        return;
+
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/periferico/${encodeURIComponent(serial)}`
+        );
+
+        if (!response.ok) {
+            throw new Error("Respuesta no válida del servidor");
+        }
+
+        const data = await response.json();
+
+        if (!data.encontrado) {
+
+            mostrarMensaje(
+                `El serial ${serial} no fue encontrado en GLPI. ` +
+                `Complete los datos manualmente.`,
+                "warning"
+            );
+
+            return;
+
+        }
+
+        // Solo se sobrescribe lo que GLPI trae con valor: un campo
+        // vacío en GLPI no debe borrar algo ya digitado a mano.
+        rellenarSiViene(equipo, "[data-per-marca]", data.marca);
+        rellenarSiViene(equipo, "[data-per-descripcion]", data.tipo);
+        rellenarSiViene(equipo, "[data-per-modelo]", data.modelo);
+        rellenarSiViene(equipo, "[data-per-inventario]", data.inventario);
+
+        equipo
+            .querySelectorAll(".is-invalid")
+            .forEach(campo => campo.classList.remove("is-invalid"));
+
+        mostrarMensaje(
+            "Periférico encontrado correctamente",
+            "success"
+        );
+
+    } catch (error) {
+
+        mostrarMensaje(
+            "Error al consultar información del periférico",
+            "error"
+        );
+
+    }
+
+}
+
+/**
+ * Escribe un valor en un campo del bloque solo si el valor viene con
+ * contenido, y dispara "input" para que el campo pierda la marca de
+ * validación pendiente.
+ *
+ * @param {HTMLElement} equipo   Bloque .equipo-item.
+ * @param {String}      selector Selector del input destino.
+ * @param {String}      valor    Valor devuelto por GLPI.
+ */
+function rellenarSiViene(equipo, selector, valor) {
+
+    if (!valor) {
+        return;
+    }
+
+    const campo = equipo.querySelector(selector);
+
+    if (!campo) {
+        return;
+    }
+
+    campo.value = valor;
+    campo.dispatchEvent(new Event("input"));
 
 }
 
