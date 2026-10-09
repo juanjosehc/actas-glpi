@@ -393,9 +393,16 @@ textarea {
     flex-direction: column;
 
     
-    height: 75vh;
+    /* Alto del diseno de referencia. El 75vh anterior valia 484.5px en la
+       captura original y por eso las cards quedaban mas altas que en ella.
+       Se fija en px para que no dependa del viewport ni del zoom: a esta
+       altura el panel de Datos del Acta muestra los 5 primeros campos y el
+       6º (Asunto) queda tapado por el borde, igual que en la referencia.
+       Las tres columnas se igualan por align-items: stretch y lo que no
+       cabe scrollea dentro de su contenedor (overflow-y: auto). */
+
+    height: 477px;
     min-height: 0;
-    max-height: 75vh;
 
 
 }
